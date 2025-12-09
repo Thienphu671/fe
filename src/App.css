@@ -1,0 +1,265 @@
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+
+/* Các lớp CSS như đã cung cấp trước đó */
+
+/* Slider */
+.banner-slider {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  max-height: 500px;
+}
+
+.slides {
+  display: flex;
+  transition: transform 1s ease-in-out;
+}
+
+.slides img {
+  width: 100%;
+  max-height: 700px;
+  object-fit: cover;
+}
+
+/* Hero Section */
+.hero {
+  background: linear-gradient(to right, #ff416c, #ff4b2b);
+  color: white;
+  padding: 10px 0;
+  text-align: center;
+}
+
+.hero h2 {
+  font-size: 2.5rem;
+  font-weight: bold;
+}
+
+.hero p {
+  font-size: 1.2rem;
+  margin-bottom: 0px;
+}
+
+.hero .btn {
+  background-color: white;
+  color: #ff416c;
+  font-weight: bold;
+  padding: 10px 25px;
+  border-radius: 25px;
+  transition: 0.3s;
+}
+
+.hero .btn:hover {
+  background-color: #ff4b2b;
+  color: white;
+}
+
+/* Products */
+.products {
+  padding: 50px 0;
+  background-color: #f8f9fa;
+  text-align: center;
+}
+
+.product {
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  transition: 0.3s;
+}
+
+.product img {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+  border-radius: 10px;
+  transition: 0.3s;
+}
+
+.product:hover {
+  transform: translateY(-5px);
+  box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.15);
+}
+
+.product h4 {
+  margin-top: 15px;
+  font-weight: bold;
+  color: #333;
+}
+
+.product p {
+  color: #ff416c;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.btn-primary {
+  background: #ff416c;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 20px;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+.btn-primary:hover {
+  background: #ff4b2b;
+}
+
+/* Footer */
+.footer {
+  background-color: #343a40;
+  color: white;
+  padding: 20px;
+  text-align: center;
+  margin-top: 30px;
+}
+
+/* Bạn có thể thêm vào file CSS của bạn (hoặc inline style) */
+/* app.css */
+
+/* Kiểu cho sao vàng */
+.react-stars {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.react-stars .react-star {
+  cursor: pointer;
+}
+
+/* Kiểu cho phần đánh giá */
+.review-section {
+  margin-top: 30px;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Định dạng cho nội dung đánh giá */
+.review-section h4 {
+  margin-bottom: 20px;
+  color: #333;
+  font-weight: bold;
+}
+
+.review-section .form-group label {
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.review-section .form-control {
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+.review-section .btn {
+  background-color: #007bff;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+}
+
+.review-section .btn:hover {
+  background-color: #0056b3;
+}
+
+.message {
+  font-weight: bold;
+  color: #d9534f;
+  margin-top: 20px;
+}
+
+/* Kiểu cho bảng chi tiết đơn hàng */
+.table-bordered {
+  width: 100%;
+  margin-top: 30px;
+  border-collapse: collapse;
+}
+
+.table-bordered th,
+.table-bordered td {
+  padding: 10px;
+  text-align: center;
+  border: 1px solid #ddd;
+}
+
+.table-bordered th {
+  background-color: #f8f9fa;
+  font-weight: bold;
+}
+
+.card {
+  margin-top: 20px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  border-radius: 5px;
+  background-color: #fff;
+}
+
+.card-body {
+  font-size: 14px;
+}
+
+/* Kiểu cho ảnh sản phẩm */
+.table-bordered img {
+  max-width: 100px;
+  max-height: 100px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+.react-stars > span {
+  display: inline-block !important;
+  margin-right: 5px !important;
+}
+/* Trong file CSS */
+.react-stars-custom span {
+  display: inline-block;
+  margin-right: 8px;
+  font-size: 24px;
+}
