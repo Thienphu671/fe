@@ -1,52 +1,32 @@
-
-
 import axios from "axios";
 
 const API_BASE_URL = "http://localhost:8080/api";
 
-// Lấy token từ localStorage
-const getToken = () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-        throw new Error("Token không tồn tại. Vui lòng đăng nhập lại.");
-    }
-    return token;
-};
-
-// Tạo một instance axios chung cho tất cả các API
-const api = axios.create({
-    baseURL: API_BASE_URL,
-    headers: {
-        "Content-Type": "application/json"
-    }
-});
-
-// Thêm token vào headers mặc định
-api.interceptors.request.use(
-    (config) => {
-        const token = getToken();
-        config.headers["Authorization"] = `Bearer ${token}`;
-        return config;
-    },
-    (error) => Promise.reject(error)
-);
-
-// Hàm để lấy danh sách sản phẩm
-export const getProducts = async (keyword = "", category = null, sizeFilter = null, sort = "", page = 0, size = 9) => {
+// Hàm để lấy danh sách sản phẩm với các tham số phân trang, tìm kiếm, và sắp xếp
+export const getProducts = async (keyword = "", category = null, sort = "", page = 0, size = 8) => {
     try {
-        const response = await api.get("/sanPhamND", {
+        const token = localStorage.getItem("token");  // Lấy token từ localStorage
+
+        // Kiểm tra nếu không có token
+        if (!token) {
+            throw new Error("Token không tồn tại. Vui lòng đăng nhập lại.");
+        }
+
+        const response = await axios.get(`${API_BASE_URL}/sanPhamND`, {
             params: {
-                keyword,
-                category,
-                sizeFilter,
-                sort,
-                page,
-                size
-            }
+                keyword: keyword,
+                category: category,
+                sort: sort,
+                page: page,
+                size: size,
+            },
+            headers: {
+                "Authorization": `Bearer ${token}`, // Thêm token vào header
+            },
         });
 
         if (response.status === 200) {
-            return response.data;
+            return response.data;  // Dữ liệu trả về từ API
         } else {
             throw new Error(`Lỗi: ${response.statusText}`);
         }
@@ -56,12 +36,24 @@ export const getProducts = async (keyword = "", category = null, sizeFilter = nu
     }
 };
 
-// Hàm lấy thông tin sản phẩm theo ID
+// Hàm để lấy thông tin sản phẩm theo ID
 export const getProductById = async (id) => {
     try {
-        const response = await api.get(`/sanPhamND/${id}`);
+        const token = localStorage.getItem("token");  // Lấy token từ localStorage
+
+        if (!token) {
+            throw new Error("Token không tồn tại. Vui lòng đăng nhập lại.");
+        }
+
+        const response = await axios.get(`${API_BASE_URL}/sanPhamND/${id}`, {
+            headers: {
+                "Authorization": `Bearer ${token}`, // Thêm token vào header
+            },
+        });
+
         if (response.status === 200) {
-            return response.data;
+            console.log("Sản phẩm nhận được: ", response.data);  // In ra thông tin sản phẩm
+            return response.data;  // Dữ liệu trả về từ API
         } else {
             throw new Error(`Lỗi: ${response.statusText}`);
         }
@@ -74,89 +66,64 @@ export const getProductById = async (id) => {
 // Hàm để tải danh sách sản phẩm
 export const loadProducts = async () => {
     const page = 0; // Trang đầu tiên
-    const size = 9; // Số lượng sản phẩm mỗi trang
-    const keyword = ""; // Tìm kiếm theo từ khóa
-    const category = null; // Loại sản phẩm
-    const sort = "asc"; // Sắp xếp theo giá tăng dần
+    const size = 8; // Số sản phẩm mỗi trang
+    const keyword = ""; // Tìm kiếm sản phẩm theo từ khóa (nếu có)
+    const category = null; // Lọc sản phẩm theo danh mục (nếu có)
+    const sort = "asc"; // Sắp xếp sản phẩm theo giá (asc/desc)
 
     try {
-        // Gọi API để lấy danh sách sản phẩm
-        const data = await getProducts(keyword, category, size, sort, page, size); // Điều chỉnh tham số size tại đây
+        const data = await getProducts(keyword, category, sort, page, size);
 
-        // Kiểm tra xem có sản phẩm trả về không
+        // Kiểm tra xem có dữ liệu sản phẩm hay không
         if (!data || !data.products || data.products.length === 0) {
             console.error("Không có sản phẩm để hiển thị.");
             return;
         }
 
-        // Thêm URL hình ảnh đầy đủ vào danh sách sản phẩm
-        const products = data.products.map(product => ({
-            ...product,
-            hinh: `http://localhost:8080${product.hinh}`
-        }));
+        // Xử lý dữ liệu và hiển thị sản phẩm
+        const products = data.products.map(product => {
+            // Chỉnh sửa trường hinh để trả về URL đầy đủ
+            const productWithImageUrl = {
+                ...product,
+                hinh: `http://localhost:8080${product.hinh}` // Thêm URL đầy đủ vào trường hinh
+            };
+            return productWithImageUrl;
+        });
 
-        console.log("Sản phẩm trang 1:", products);
-        console.log("Tổng số trang:", data.totalPages);
-        console.log("Tổng số sản phẩm:", data.totalItems);
+        console.log(products); // Hiển thị dữ liệu sản phẩm
     } catch (error) {
         console.error("Không thể tải sản phẩm", error);
     }
 };
 
-
-
-
 // Hàm lấy sản phẩm theo ID
 export const loadProductById = async (productId) => {
     try {
+        console.log("Gọi sản phẩm theo ID:", productId);  // Kiểm tra ID gọi API
         const product = await getProductById(productId);
+
         if (!product) {
             console.error("Không tìm thấy sản phẩm với ID:", productId);
             return;
         }
 
+        // Chỉnh sửa trường hinh để trả về URL đầy đủ
         const productWithImageUrl = {
             ...product,
-            hinh: `http://localhost:8080${product.hinh}`
+            hinh: `http://localhost:8080${product.hinh}` // Thêm URL đầy đủ vào trường hinh
         };
 
-        console.log("Sản phẩm với URL hình ảnh đầy đủ:", productWithImageUrl);
+        console.log("Sản phẩm với URL hình ảnh đầy đủ:", productWithImageUrl); // Hiển thị thông tin sản phẩm
     } catch (error) {
         console.error("Không thể tải sản phẩm theo ID", error);
     }
 };
 
-// Hàm để lấy 8 sản phẩm mới nhất có status = 0
-export const getTop8NewestProducts = async () => {
-    try {
-        const response = await axios.get(`${API_BASE_URL}/sanPhamND/top8`);
-        if (response.status === 200) {
-            return response.data.map(product => ({
-                ...product,
-                hinh: `http://localhost:8080${product.hinh}`
-            }));
-        } else {
-            throw new Error(`Lỗi: ${response.statusText}`);
-        }
-    } catch (error) {
-        console.error("Lỗi khi lấy top 8 sản phẩm mới nhất:", error);
-        throw error;
-    }
+// Ví dụ gọi hàm lấy sản phẩm theo ID từ một ID động, có thể lấy từ URL hoặc sự kiện của người dùng
+const handleProductDetailClick = (productId) => {
+    console.log("Nhấn vào sản phẩm ID:", productId);  // In ra ID sản phẩm khi người dùng nhấn
+    loadProductById(productId);
 };
 
-export const getNewestProducts = async () => {
-    try {
-        const response = await api.get("/sanPhamND/moiNhat"); // gọi đúng endpoint
-        if (response.status === 200) {
-            return response.data.map(product => ({
-                ...product,
-                hinh: `http://localhost:8080${product.hinh}`
-            }));
-        } else {
-            throw new Error(`Lỗi: ${response.statusText}`);
-        }
-    } catch (error) {
-        console.error("Lỗi khi lấy sản phẩm mới nhất:", error);
-        throw error;
-    }
-};
+// Giả sử có 1 button trên UI mà người dùng click để lấy sản phẩm theo ID
+handleProductDetailClick(33);  // Thử gọi với ID là 33
