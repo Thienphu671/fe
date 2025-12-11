@@ -1,4 +1,3 @@
-// src/pages/user/SanPham.jsx
 "use client"
 
 import React, { useEffect, useState } from "react"
@@ -21,7 +20,6 @@ const SanPham = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Lấy tối đa 300 sản phẩm (hoặc nhiều hơn nếu bạn có) – vẫn là client-side pagination
         const res = await getProducts("", null, "asc", 0, 300)
         setProducts(res.products || [])
 
@@ -63,7 +61,7 @@ const SanPham = () => {
     }
   }
 
-  // Hover effects
+  // CSS – ĐÃ FIX HOÀN TOÀN: hiện "Xem Chi Tiết" khi hover
   useEffect(() => {
     const style = document.createElement("style")
     style.textContent = `
@@ -71,21 +69,23 @@ const SanPham = () => {
       .product-card:hover { transform: translateY(-16px); box-shadow: 0 25px 50px rgba(0,0,0,0.15); }
       .product-card:hover .product-image { transform: scale(1.1); }
       .product-card:hover .product-overlay { background: rgba(0,0,0,0.55); }
-      .product-card:hover .detail-btn { opacity: 1; }
+      
+      /* Dòng QUAN TRỌNG NHẤT – bật hiển thị nút Xem Chi Tiết */
+      .product-card:hover .detail-btn { opacity: 1 !important; }
+
       .fav-btn:hover, .fav-btn.favorited { background:#d4a574 !important; color:white !important; border-color:#d4a574 !important; }
     `
     document.head.appendChild(style)
     return () => document.head.removeChild(style)
   }, [])
 
-  // ======== PHÂN TRANG CLIENT-SIDE (12 sản phẩm/trang) ========
+  // ======== PHÂN TRANG CLIENT-SIDE ========
   const totalPages = Math.ceil(products.length / ITEMS_PER_PAGE)
   const currentProducts = products.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   )
 
-  // Hàm tạo mảng trang hiển thị thông minh (1 ... 4 5 6 ... 20)
   const getVisiblePages = () => {
     const pages = []
     const maxVisible = 5
@@ -94,18 +94,11 @@ const SanPham = () => {
       for (let i = 1; i <= totalPages; i++) pages.push(i)
     } else {
       pages.push(1)
-
       if (currentPage > 3) pages.push("...")
-
       const start = Math.max(2, currentPage - 1)
       const end = Math.min(totalPages - 1, currentPage + 1)
-
-      for (let i = start; i <= end; i++) {
-        pages.push(i)
-      }
-
+      for (let i = start; i <= end; i++) pages.push(i)
       if (currentPage < totalPages - 2) pages.push("...")
-
       if (totalPages > 1) pages.push(totalPages)
     }
     return pages
@@ -135,7 +128,7 @@ const SanPham = () => {
     imgBox: { position:"relative", overflow:"hidden", aspectRatio:"1" },
     img: { width:"100%", height:"100%", objectFit:"cover", transition:"transform 0.6s ease-out" },
     overlay: { position:"absolute", inset:0, background:"rgba(0,0,0,0)", display:"flex", alignItems:"center", justifyContent:"center", transition:"0.4s" },
-    detailBtn: { opacity:0, padding:"14px 36px", background:"#fff", color:"#2d2d2d", border:"none", borderRadius:"8px", fontWeight:600, fontSize:"15px", cursor:"pointer", transition:"0.4s" },
+    detailBtn: { opacity:0, padding:"14px 36px", background:"#fff", color:"#2d2d2d", border:"none", borderRadius:"8px", fontWeight:600, fontSize:"15px", cursor:"pointer", transition:"opacity 0.4s ease" },
 
     info: { padding:"32px 24px", textAlign:"center" },
     name: { fontFamily:"'Georgia', serif", fontSize:"22px", fontWeight:300, color:"#2d2d2d", marginBottom:"12px" },
@@ -161,6 +154,7 @@ const SanPham = () => {
     loading: { textAlign:"center", padding:"150px 0", fontSize:"28px", color:"#888" }
   }
 
+  // Responsive grid
   const gridStyle = {
     ...styles.grid,
     gridTemplateColumns:
@@ -197,6 +191,7 @@ const SanPham = () => {
                   className="product-image"
                   onError={e => e.target.src = "https://via.placeholder.com/400x400/f5f1ed/999?text=No+Image"}
                 />
+                {/* Overlay + nút Xem Chi Tiết */}
                 <div style={styles.overlay} className="product-overlay">
                   <button
                     style={styles.detailBtn}
@@ -233,10 +228,9 @@ const SanPham = () => {
         })}
       </div>
 
-      {/* ==================== PHÂN TRANG SIÊU ĐẸP ==================== */}
+      {/* PHÂN TRANG – giữ nguyên đẹp như cũ */}
       {totalPages > 1 && (
         <>
-          {/* Dòng thông tin trang */}
           <p style={{ textAlign:"center", color:"#666", margin:"0 0 30px", fontSize:"16px" }}>
             Trang <strong>{currentPage}</strong> / {totalPages} ({products.length} sản phẩm)
           </p>
@@ -250,7 +244,6 @@ const SanPham = () => {
             flexWrap:"wrap",
             padding:"0 20px"
           }}>
-            {/* Previous */}
             <button
               onClick={() => changePage(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
@@ -266,7 +259,6 @@ const SanPham = () => {
               ←
             </button>
 
-            {/* Các trang */}
             {getVisiblePages().map((page, idx) =>
               page === "..." ? (
                 <span key={idx} style={{ color:"#999", fontSize:"22px", padding:"0 8px" }}>...</span>
@@ -289,7 +281,6 @@ const SanPham = () => {
               )
             )}
 
-            {/* Next */}
             <button
               onClick={() => changePage(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage === totalPages}
