@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react"
 import { useParams, Link } from "react-router-dom"
 import { getProductById } from "../../api/sanPhamND"
 import { themVaoGiohang } from "../../api/giohang"
-import { addFavorite } from "../../api/yeuthich"
+import { addFavorite, getFavorites, removeFavorite } from "../../api/yeuthich" // Thêm getFavorites + removeFavorite
 import { toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
@@ -31,7 +31,7 @@ const ProductDetailForm = () => {
   const [reviews, setReviews] = useState([])
   const [quantity, setQuantity] = useState(1)
   const [loading, setLoading] = useState(true)
-  const [isFavorited, setIsFavorited] = useState(false) // Trạng thái yêu thích
+  const [isFavorited, setIsFavorited] = useState(false)
 
   const imageUrl = product.hinh ? `http://localhost:8080${product.hinh}` : "https://via.placeholder.com/800"
 
@@ -44,6 +44,20 @@ const ProductDetailForm = () => {
         ])
         setProduct(prodRes)
         setReviews(reviewRes)
+
+        // Kiểm tra trạng thái yêu thích từ backend
+        try {
+          const favResponse = await getFavorites()
+          const favList = favResponse.data || favResponse || []
+          const isFav = favList.some(fav => 
+            (fav.product?.id && fav.product.id === Number(id)) || 
+            (fav.id && fav.id === Number(id))
+          )
+          setIsFavorited(isFav)
+        } catch (favErr) {
+          console.warn("Không thể kiểm tra yêu thích", favErr)
+        }
+
         setLoading(false)
       } catch (err) {
         console.error(err)
@@ -62,39 +76,43 @@ const ProductDetailForm = () => {
     }
   }
 
-  const handleAddToWishlist = async () => {
-    // Nếu đã yêu thích rồi → thông báo ngay không gọi API
+  const handleToggleWishlist = async () => {
     if (isFavorited) {
-      toast.info("Sản phẩm đã được yêu thích rồi!", {
-        icon: <FontAwesomeIcon icon={faHeart} style={{ color: "#d4a574" }} />,
-      })
-      return
-    }
-
-    try {
-      await addFavorite(product.id)
-      setIsFavorited(true) // Cập nhật trạng thái ngay khi thành công
-      toast.success("Đã thêm vào yêu thích!", {
-        icon: <FontAwesomeIcon icon={faHeart} style={{ color: "#ff6b9d" }} />,
-      })
-    } catch (err) {
-      const errorMsg = err.response?.data?.message || err.message || ""
-
-      // Kiểm tra nếu sản phẩm đã tồn tại trong danh sách yêu thích
-      if (
-        errorMsg.toLowerCase().includes("đã tồn tại") ||
-        errorMsg.toLowerCase().includes("yêu thích") ||
-        errorMsg.toLowerCase().includes("already") ||
-        errorMsg.toLowerCase().includes("duplicate")
-      ) {
-        setIsFavorited(true) // Vẫn cập nhật trạng thái để nút đúng
-        toast.error("Sản phẩm đã được yêu thích rồi!", {
-          icon: <FontAwesomeIcon icon={faHeart} style={{ color: "#d4a574" }} />,
+      // Đã yêu thích → XÓA
+      try {
+        await removeFavorite(product.id)
+        setIsFavorited(false)
+        toast.success("Đã xóa khỏi yêu thích!", {
+          icon: <FontAwesomeIcon icon={faHeart} style={{ color: "#ff6b9d" }} />,
         })
-      } else if (errorMsg.toLowerCase().includes("đăng nhập") || errorMsg.toLowerCase().includes("unauthorized")) {
-        toast.error("Vui lòng đăng nhập để thêm yêu thích")
-      } else {
-        toast.error("Không thể thêm vào yêu thích lúc này. Vui lòng thử lại!")
+      } catch (err) {
+        toast.error("Không thể xóa khỏi yêu thích!")
+      }
+    } else {
+      // Chưa yêu thích → THÊM
+      try {
+        await addFavorite(product.id)
+        setIsFavorited(true)
+        toast.success("Đã thêm vào yêu thích!", {
+          icon: <FontAwesomeIcon icon={faHeart} style={{ color: "#ff6b9d" }} />,
+        })
+      } catch (err) {
+        const errorMsg = err.response?.data?.message || err.message || ""
+        if (
+          errorMsg.toLowerCase().includes("đã tồn tại") ||
+          errorMsg.toLowerCase().includes("yêu thích") ||
+          errorMsg.toLowerCase().includes("already") ||
+          errorMsg.toLowerCase().includes("duplicate")
+        ) {
+          setIsFavorited(true)
+          toast.error("Sản phẩm đã được yêu thích rồi!", {
+            icon: <FontAwesomeIcon icon={faHeart} style={{ color: "#d4a574" }} />,
+          })
+        } else if (errorMsg.toLowerCase().includes("đăng nhập") || errorMsg.toLowerCase().includes("unauthorized")) {
+          toast.error("Vui lòng đăng nhập để thêm yêu thích")
+        } else {
+          toast.error("Không thể thêm vào yêu thích lúc này!")
+        }
       }
     }
   }
@@ -116,7 +134,6 @@ const ProductDetailForm = () => {
   }, [isFavorited])
 
   const styles = {
-    // ... (giữ nguyên tất cả styles cũ của bạn)
     root: { margin:0, padding:0, backgroundColor:"#f5f1ed", width:"100%", minHeight:"100vh", overflowX:"hidden" },
     heroSection: { width:"100%", padding:"100px 5% 80px", background:"linear-gradient(to bottom, #f5f1ed 0%, #f5f1ed 60%, rgba(196,186,175,0.05) 100%)" },
     content: { maxWidth:"1600px", margin:"0 auto", padding:"0 5%" },
@@ -193,7 +210,7 @@ const ProductDetailForm = () => {
                 <button 
                   style={styles.btnWishlist} 
                   className={`btn-wishlist ${isFavorited ? 'favorited' : ''}`}
-                  onClick={handleAddToWishlist}
+                  onClick={handleToggleWishlist}
                 >
                   <FontAwesomeIcon icon={faHeart} /> {isFavorited ? "Đã Yêu Thích" : "Yêu Thích"}
                 </button>
