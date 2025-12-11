@@ -1,2267 +1,324 @@
-
-
-// // // import React, { useState, useEffect } from 'react';
-// // // import axios from 'axios';
-// // // import { useParams } from 'react-router-dom';
-// // // import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-// // // import { faStar } from '@fortawesome/free-solid-svg-icons'; // Icon sao
-// // // import '../../App.css';  // Đường dẫn từ src/pages/user đến src/app.css
-
-// // // const OrderDetail = () => {
-// // //   const { id } = useParams();
-// // //   const [orderDetails, setOrderDetails] = useState([]); // Danh sách chi tiết sản phẩm
-// // //   const [totalPrice, setTotalPrice] = useState(0); // Tổng tiền
-// // //   const [user, setUser] = useState(null); // Thông tin người dùng
-// // //   const [status, setStatus] = useState(''); // Trạng thái đơn hàng
-// // //   const [address, setAddress] = useState(''); // Địa chỉ
-// // //   const [rating, setRating] = useState(0); // Số sao
-// // //   const [review, setReview] = useState(''); // Nội dung đánh giá
-// // //   const [message, setMessage] = useState(''); // Thông báo lỗi/success
-
-// // //   useEffect(() => {
-// // //     axios.get(`http://localhost:8080/api/donHangND/detail/${id}`)
-// // //       .then(response => {
-// // //         const data = response.data;
-// // //         console.log(data);  // Kiểm tra dữ liệu trả về từ API
-// // //         setOrderDetails(data.orderDetails.orderDetails); // danh sách sản phẩm
-// // //         setTotalPrice(data.orderDetails.totalPrice); // tổng tiền
-// // //         setUser(data.user); // userDTO
-// // //         setStatus(data.status); // status đã chuyển thành chuỗi rồi
-// // //         setAddress(data.address); // Địa chỉ
-// // //       })
-// // //       .catch(error => {
-// // //         console.error('Lỗi khi lấy chi tiết đơn hàng:', error);
-// // //       });
-// // //   }, [id]);
-
-// // //   const userId = localStorage.getItem("userId"); // Hoặc sessionStorage nếu bạn dùng cái đó
-
-// // //   const handleReviewSubmit = () => {
-// // //     if (rating < 1 || rating > 5) {
-// // //       setMessage('Số sao phải nằm trong khoảng từ 1 đến 5');
-// // //       return;
-// // //     }
-  
-// // //     const reviewData = {
-// // //       donhangId: id,
-// // //       taikhoanId: Number(userId), // Chuyển đổi thành số
-// // //       danhgia: review,
-// // //       sao: rating,
-// // //     };
-  
-// // //     axios.post('http://localhost:8080/api/danhgia/submit', reviewData, {
-// // //       headers: {
-// // //         'Content-Type': 'application/json',
-// // //       },
-// // //     })
-// // //       .then(response => {
-// // //         setMessage('Đánh giá thành công!');
-// // //         setReview(''); // Reset nội dung đánh giá
-// // //         setRating(0); // Reset số sao
-// // //       })
-// // //       .catch(error => {
-// // //         console.log('Review data:', reviewData);
-// // //         setMessage('Lỗi khi gửi đánh giá!');
-// // //         console.error('Lỗi chi tiết:', error.response.data);  // Log chi tiết lỗi từ response
-// // //       });
-// // //   };
-
-// // //   if (!user || orderDetails.length === 0) {
-// // //     return <div>Loading...</div>;
-// // //   }
-
-// // //   return (
-// // //     <div className="container mt-5">
-// // //       <h2 className="text-center">Chi Tiết Đơn Hàng</h2>
-
-// // //       {/* Hiển thị thông tin khách hàng */}
-// // //       <div className="card">
-// // //         <div className="card-body">
-// // //           <p><strong>Khách Hàng:</strong> {user.fullname || 'Thông tin không có'}</p>
-// // //           <p><strong>Gmail:</strong> {user.email || 'Thông tin không có'}</p>
-// // //           <p><strong>SĐT:</strong> {user.phoneNumber || 'Thông tin không có'}</p>
-// // //           <p><strong>Địa Chỉ:</strong> {address || 'Thông tin không có'}</p>
-// // //           <p><strong>Trạng Thái:</strong> {status || 'Không xác định'}</p>
-// // //           {/* Kiểm tra nếu có ngày đặt */}
-// // //           {user.orderDate && <p><strong>Ngày Đặt:</strong> {new Date(user.orderDate).toLocaleDateString()}</p>}
-// // //         </div>
-// // //       </div>
-
-// // //       <h3 className="mt-4">Sản Phẩm</h3>
-// // //       <table className="table table-bordered">
-// // //         <thead>
-// // //           <tr>
-// // //             <th>Ảnh Sản Phẩm</th>
-// // //             <th>Tên Sản Phẩm</th>
-// // //             <th>Giá</th>
-// // //             <th>Số Lượng</th>
-// // //             <th>Tổng</th>
-// // //           </tr>
-// // //         </thead>
-// // //         <tbody>
-// // //           {orderDetails.map((detail, index) => (
-// // //             <tr key={index}>
-// // //               <td>
-// // //                 {detail.productImage ? (
-// // //                   <img
-// // //                     src={`http://localhost:8080/uploads/${detail.productImage}`}
-// // //                     width="80"
-// // //                     height="80"
-// // //                     alt={detail.productName}
-// // //                   />
-// // //                 ) : (
-// // //                   <span>Không có ảnh</span>
-// // //                 )}
-// // //               </td>
-// // //               <td>{detail.productName}</td>
-// // //               <td>{new Intl.NumberFormat().format(detail.price)} VNĐ</td>
-// // //               <td>{detail.quantity}</td>
-// // //               <td>{new Intl.NumberFormat().format(detail.price * detail.quantity)} VNĐ</td>
-// // //             </tr>
-// // //           ))}
-// // //           <tr>
-// // //             <td colSpan="4"><strong>Tổng tiền:</strong></td>
-// // //             <td>{new Intl.NumberFormat().format(totalPrice)} VNĐ</td>
-// // //           </tr>
-// // //         </tbody>
-// // //       </table>
-
-// // //       {/* Phần đánh giá sản phẩm */}
-// // //       <div className="review-section mt-5">
-// // //         <h4>Đánh Giá Đơn Hàng</h4>
-// // //         {message && <p className="message">{message}</p>}
-// // //         <div className="form-group">
-// // //           <label htmlFor="rating">Chọn số sao:</label>
-// // //           <div className="rating-stars">
-// // //             {[1, 2, 3, 4, 5].map((star) => (
-// // //               <FontAwesomeIcon
-// // //                 key={star}
-// // //                 icon={faStar}
-// // //                 color={star <= rating ? '#ffd700' : '#ccc'}
-// // //                 onClick={() => setRating(star)}
-// // //                 style={{ cursor: 'pointer', fontSize: '24px', marginRight: '5px' }}
-// // //               />
-// // //             ))}
-// // //           </div>
-// // //         </div>
-// // //         <div className="form-group">
-// // //           <label htmlFor="review">Nội dung đánh giá:</label>
-// // //           <textarea
-// // //             id="review"
-// // //             className="form-control"
-// // //             rows="4"
-// // //             value={review}
-// // //             onChange={(e) => setReview(e.target.value)}
-// // //             placeholder="Viết đánh giá của bạn"
-// // //           />
-// // //         </div>
-// // //         <button className="btn btn-primary mt-3" onClick={handleReviewSubmit}>Gửi Đánh Giá</button>
-// // //       </div>
-
-// // //       <a href="/donHangND" className="btn btn-secondary mt-3">Quay Lại</a>
-// // //     </div>
-// // //   );
-// // // };
-
-// // // export default OrderDetail;
-
-
-
-// // import React, { useState, useEffect } from 'react';
-// // import axios from 'axios';
-// // import { useParams } from 'react-router-dom';
-// // import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-// // import { faStar } from '@fortawesome/free-solid-svg-icons'; // Icon sao
-// // import '../../App.css';  // Đường dẫn từ src/pages/user đến src/app.css
-
-// // const OrderDetail = () => {
-// //   const { id } = useParams();
-// //   const [orderDetails, setOrderDetails] = useState([]); // Danh sách chi tiết sản phẩm
-// //   const [totalPrice, setTotalPrice] = useState(0); // Tổng tiền
-// //   const [user, setUser] = useState(null); // Thông tin người dùng
-// //   const [status, setStatus] = useState(''); // Trạng thái đơn hàng
-// //   const [address, setAddress] = useState(''); // Địa chỉ
-// //   const [rating, setRating] = useState(0); // Số sao
-// //   const [review, setReview] = useState(''); // Nội dung đánh giá
-// //   const [message, setMessage] = useState(''); // Thông báo lỗi/success
-// //   const [alreadyReviewed, setAlreadyReviewed] = useState(false); // Kiểm tra xem đã đánh giá chưa
-
-// //   useEffect(() => {
-// //     axios.get(`http://localhost:8080/api/donHangND/detail/${id}`)
-// //       .then(response => {
-// //         const data = response.data;
-// //         console.log(data);  // Kiểm tra dữ liệu trả về từ API
-// //         setOrderDetails(data.orderDetails.orderDetails); // danh sách sản phẩm
-// //         setTotalPrice(data.orderDetails.totalPrice); // tổng tiền
-// //         setUser(data.user); // userDTO
-// //         setStatus(data.status); // status đã chuyển thành chuỗi rồi
-// //         setAddress(data.address); // Địa chỉ
-        
-// //         // Kiểm tra nếu người dùng đã đánh giá đơn hàng
-// //         if (data.user.hasReviewed) {
-// //           setAlreadyReviewed(true);
-// //         }
-// //       })
-// //       .catch(error => {
-// //         console.error('Lỗi khi lấy chi tiết đơn hàng:', error);
-// //       });
-// //   }, [id]);
-
-// //   const userId = localStorage.getItem("userId"); // Hoặc sessionStorage nếu bạn dùng cái đó
-
-  
-// //   const handleReviewSubmit = () => {
-// //     if (alreadyReviewed) {
-// //       setMessage('Bạn đã đánh giá rồi!');
-// //       return; // Dừng lại nếu đã đánh giá
-// //     }
-  
-// //     if (rating < 1 || rating > 5) {
-// //       setMessage('Số sao phải nằm trong khoảng từ 1 đến 5');
-// //       return;
-// //     }
-  
-// //     const reviewData = {
-// //       donhangId: id,
-// //       taikhoanId: Number(userId), // Chuyển đổi thành số
-// //       danhgia: review,
-// //       sao: rating,
-// //     };
-  
-// //     axios.post('http://localhost:8080/api/danhgia/submit', reviewData, {
-// //       headers: {
-// //         'Content-Type': 'application/json',
-// //       },
-// //     })
-// //       .then(response => {
-// //         setMessage('Đánh giá thành công!');
-// //         setReview(''); // Reset nội dung đánh giá
-// //         setRating(0); // Reset số sao
-  
-// //         // Lưu đánh giá vào localStorage
-// //         const newReview = {
-// //           userName: user.fullname,
-// //           danhgia: review,
-// //           sao: rating,
-// //         };
-  
-// //         let storedReviews = JSON.parse(localStorage.getItem("reviews")) || [];
-// //         storedReviews.push(newReview);
-// //         localStorage.setItem("reviews", JSON.stringify(storedReviews));
-// //       })
-// //       .catch(error => {
-// //         console.log('Review data:', reviewData);
-// //         setMessage('Bạn đã đánh giá đơn hàng này!');
-// //         console.error('Lỗi chi tiết:', error.response.data);  // Log chi tiết lỗi từ response
-// //       });
-// //   };
-  
-
-// //   if (!user || orderDetails.length === 0) {
-// //     return <div>Loading...</div>;
-// //   }
-
-// //   return (
-// //     <div className="container mt-5">
-// //       <h2 className="text-center">Chi Tiết Đơn Hàng</h2>
-
-// //       {/* Hiển thị thông tin khách hàng */}
-// //       <div className="card">
-// //         <div className="card-body">
-// //           <p><strong>Khách Hàng:</strong> {user.fullname || 'Thông tin không có'}</p>
-// //           <p><strong>Gmail:</strong> {user.email || 'Thông tin không có'}</p>
-// //           <p><strong>SĐT:</strong> {user.phoneNumber || 'Thông tin không có'}</p>
-// //           <p><strong>Địa Chỉ:</strong> {address || 'Thông tin không có'}</p>
-// //           <p><strong>Trạng Thái:</strong> {status || 'Không xác định'}</p>
-// //           {/* Kiểm tra nếu có ngày đặt */}
-// //           {user.orderDate && <p><strong>Ngày Đặt:</strong> {new Date(user.orderDate).toLocaleDateString()}</p>}
-// //         </div>
-// //       </div>
-
-// //       <h3 className="mt-4">Sản Phẩm</h3>
-// //       <table className="table table-bordered">
-// //         <thead>
-// //           <tr>
-// //             <th>Ảnh Sản Phẩm</th>
-// //             <th>Tên Sản Phẩm</th>
-// //             <th>Giá</th>
-// //             <th>Số Lượng</th>
-// //             <th>Tổng</th>
-// //           </tr>
-// //         </thead>
-// //         <tbody>
-// //           {orderDetails.map((detail, index) => (
-// //             <tr key={index}>
-// //               <td>
-// //                 {detail.productImage ? (
-// //                   <img
-// //                     src={`http://localhost:8080/uploads/${detail.productImage}`}
-// //                     width="80"
-// //                     height="80"
-// //                     alt={detail.productName}
-// //                   />
-// //                 ) : (
-// //                   <span>Không có ảnh</span>
-// //                 )}
-// //               </td>
-// //               <td>{detail.productName}</td>
-// //               <td>{new Intl.NumberFormat().format(detail.price)} VNĐ</td>
-// //               <td>{detail.quantity}</td>
-// //               <td>{new Intl.NumberFormat().format(detail.price * detail.quantity)} VNĐ</td>
-// //             </tr>
-// //           ))}
-// //           <tr>
-// //             <td colSpan="4"><strong>Tổng tiền:</strong></td>
-// //             <td>{new Intl.NumberFormat().format(totalPrice)} VNĐ</td>
-// //           </tr>
-// //         </tbody>
-// //       </table>
-
-// //       {/* Phần đánh giá sản phẩm */}
-// //       <div className="review-section mt-5">
-// //         <h4>Đánh Giá Đơn Hàng</h4>
-// //         {message && <p className="message">{message}</p>}
-// //         <div className="form-group">
-// //           <label htmlFor="rating">Chọn số sao:</label>
-// //           <div className="rating-stars">
-// //             {[1, 2, 3, 4, 5].map((star) => (
-// //               <FontAwesomeIcon
-// //                 key={star}
-// //                 icon={faStar}
-// //                 color={star <= rating ? '#ffd700' : '#ccc'}
-// //                 onClick={() => setRating(star)}
-// //                 style={{ cursor: 'pointer', fontSize: '24px', marginRight: '5px' }}
-// //               />
-// //             ))}
-// //           </div>
-// //         </div>
-// //         <div className="form-group">
-// //           <label htmlFor="review">Nội dung đánh giá:</label>
-// //           <textarea
-// //             id="review"
-// //             className="form-control"
-// //             rows="4"
-// //             value={review}
-// //             onChange={(e) => setReview(e.target.value)}
-// //             placeholder="Viết đánh giá của bạn"
-// //           />
-// //         </div>
-// //         <button className="btn btn-primary mt-3" onClick={handleReviewSubmit} disabled={alreadyReviewed}>Gửi Đánh Giá</button>
-// //       </div>
-
-// //       <a href="/donHangND" className="btn btn-secondary mt-3">Quay Lại</a>
-// //     </div>
-// //   );
-// // };
-
-// // export default OrderDetail;
-
-
-
-
-// // import React, { useState, useEffect } from 'react';
-// // import axios from 'axios';
-// // import { useParams } from 'react-router-dom';
-// // import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-// // import { faStar } from '@fortawesome/free-solid-svg-icons'; // Icon sao
-// // import '../../App.css';  // Đường dẫn từ src/pages/user đến src/app.css
-
-// // const OrderDetail = () => {
-// //   const { id } = useParams();
-// //   const [orderDetails, setOrderDetails] = useState([]); // Danh sách chi tiết sản phẩm
-// //   const [totalPrice, setTotalPrice] = useState(0); // Tổng tiền
-// //   const [user, setUser] = useState(null); // Thông tin người dùng
-// //   const [status, setStatus] = useState(''); // Trạng thái đơn hàng
-// //   const [address, setAddress] = useState(''); // Địa chỉ
-// //   const [rating, setRating] = useState(0); // Số sao
-// //   const [review, setReview] = useState(''); // Nội dung đánh giá
-// //   const [message, setMessage] = useState(''); // Thông báo lỗi/success
-// //   const [alreadyReviewed, setAlreadyReviewed] = useState(false); // Kiểm tra xem đã đánh giá chưa
-
-// //   useEffect(() => {
-// //     axios.get(`http://localhost:8080/api/donHangND/detail/${id}`)
-// //       .then(response => {
-// //         const data = response.data;
-// //         console.log(data);  // Kiểm tra dữ liệu trả về từ API
-// //         setOrderDetails(data.orderDetails.orderDetails); // danh sách sản phẩm
-// //         setTotalPrice(data.orderDetails.totalPrice); // tổng tiền
-// //         setUser(data.user); // userDTO
-// //         setStatus(data.status); // status đã chuyển thành chuỗi rồi
-// //         setAddress(data.address); // Địa chỉ
-        
-// //         // Kiểm tra nếu người dùng đã đánh giá đơn hàng
-// //         if (data.user.hasReviewed) {
-// //           setAlreadyReviewed(true);
-// //         }
-// //       })
-// //       .catch(error => {
-// //         console.error('Lỗi khi lấy chi tiết đơn hàng:', error);
-// //         setMessage('Đã xảy ra lỗi khi lấy thông tin đơn hàng!');
-// //       });
-// //   }, [id]);
-
-  
-// //   const userId = localStorage.getItem("userId"); // Hoặc sessionStorage nếu bạn dùng cái đó
-
-// //   const handleReviewSubmit = () => {
-// //     if (alreadyReviewed) {
-// //       setMessage('Bạn đã đánh giá rồi!');
-// //       return; // Dừng lại nếu đã đánh giá
-// //     }
-  
-// //     if (rating < 1 || rating > 5) {
-// //       setMessage('Số sao phải nằm trong khoảng từ 1 đến 5');
-// //       return;
-// //     }
-  
-// //     if (!review.trim()) {
-// //       setMessage('Vui lòng viết nội dung đánh giá.');
-// //       return;
-// //     }
-
-// //     const reviewData = {
-// //       donhangId: id,
-// //       taikhoanId: Number(userId), // Chuyển đổi thành số
-// //       danhgia: review,
-// //       sao: rating,
-// //     };
-  
-// //     axios.post('http://localhost:8080/api/danhgia/submit', reviewData, {
-// //       headers: {
-// //         'Content-Type': 'application/json',
-// //       },
-// //     })
-// //       .then(response => {
-// //         setMessage('Đánh giá thành công!');
-// //         setReview(''); // Reset nội dung đánh giá
-// //         setRating(0); // Reset số sao
-  
-// //         // Lưu đánh giá vào localStorage
-// //         const newReview = {
-// //           userName: user.fullname,
-// //           danhgia: review,
-// //           sao: rating,
-// //         };
-  
-// //         let storedReviews = JSON.parse(localStorage.getItem("reviews")) || [];
-// //         storedReviews.push(newReview);
-// //         localStorage.setItem("reviews", JSON.stringify(storedReviews));
-// //       })
-// //       .catch(error => {
-// //         console.log('Review data:', reviewData);
-// //         setMessage('đơn hàng này bạn đánh giá!');
-// //         console.error('Lỗi chi tiết:', error.response.data);  // Log chi tiết lỗi từ response
-// //       });
-// //   };
-  
-
-// //   if (!user || orderDetails.length === 0) {
-// //     return <div>Loading...</div>;
-// //   }
-
-// //   return (
-// //     <div className="container mt-5">
-// //       <h2 className="text-center">Chi Tiết Đơn Hàng</h2>
-
-// //       {/* Hiển thị thông tin khách hàng */}
-// //       <div className="card">
-// //         <div className="card-body">
-// //           <p><strong>Khách Hàng:</strong> {user.fullname || 'Thông tin không có'}</p>
-// //           <p><strong>Gmail:</strong> {user.email || 'Thông tin không có'}</p>
-// //           <p><strong>SĐT:</strong> {user.phoneNumber || 'Thông tin không có'}</p>
-// //           <p><strong>Địa Chỉ:</strong> {address || 'Thông tin không có'}</p>
-// //           <p><strong>Trạng Thái:</strong> {status || 'Không xác định'}</p>
-// //           {/* Kiểm tra nếu có ngày đặt */}
-// //           {user.orderDate && <p><strong>Ngày Đặt:</strong> {new Date(user.orderDate).toLocaleDateString()}</p>}
-// //         </div>
-// //       </div>
-
-// //       <h3 className="mt-4">Sản Phẩm</h3>
-// //       <table className="table table-bordered">
-// //         <thead>
-// //           <tr>
-// //             <th>Ảnh Sản Phẩm</th>
-// //             <th>Tên Sản Phẩm</th>
-// //             <th>Giá</th>
-// //             <th>Số Lượng</th>
-// //             <th>Tổng</th>
-// //           </tr>
-// //         </thead>
-// //         <tbody>
-// //           {orderDetails.map((detail, index) => (
-// //             <tr key={index}>
-// //               <td>
-// //                 {detail.productImage ? (
-// //                   <img
-// //                     src={`http://localhost:8080/uploads/${detail.productImage}`}
-// //                     width="80"
-// //                     height="80"
-// //                     alt={detail.productName}
-// //                   />
-// //                 ) : (
-// //                   <span>Không có ảnh</span>
-// //                 )}
-// //               </td>
-// //               <td>{detail.productName}</td>
-// //               <td>{new Intl.NumberFormat().format(detail.price)} VNĐ</td>
-// //               <td>{detail.quantity}</td>
-// //               <td>{new Intl.NumberFormat().format(detail.price * detail.quantity)} VNĐ</td>
-// //             </tr>
-// //           ))}
-// //           <tr>
-// //             <td colSpan="4"><strong>Tổng tiền:</strong></td>
-// //             <td>{new Intl.NumberFormat().format(totalPrice)} VNĐ</td>
-// //           </tr>
-// //         </tbody>
-// //       </table>
-
-// //       {/* Phần đánh giá sản phẩm */}
-// //       <div className="review-section mt-5">
-// //         <h4>Đánh Giá Đơn Hàng</h4>
-// //         {message && <p className="message">{message}</p>}
-// //         <div className="form-group">
-// //           <label htmlFor="rating">Chọn số sao:</label>
-// //           <div className="rating-stars">
-// //             {[1, 2, 3, 4, 5].map((star) => (
-// //               <FontAwesomeIcon
-// //                 key={star}
-// //                 icon={faStar}
-// //                 color={star <= rating ? '#ffd700' : '#ccc'}
-// //                 onClick={() => setRating(star)}
-// //                 style={{ cursor: 'pointer', fontSize: '24px', marginRight: '5px' }}
-// //               />
-// //             ))}
-// //           </div>
-// //         </div>
-// //         <div className="form-group">
-// //           <label htmlFor="review">Nội dung đánh giá:</label>
-// //           <textarea
-// //             id="review"
-// //             className="form-control"
-// //             rows="4"
-// //             value={review}
-// //             onChange={(e) => setReview(e.target.value)}
-// //             placeholder="Viết đánh giá của bạn"
-// //           />
-// //         </div>
-// //         <button className="btn btn-primary mt-3" onClick={handleReviewSubmit} disabled={alreadyReviewed}>Gửi Đánh Giá</button>
-// //       </div>
-
-// //       <a href="/donHangND" className="btn btn-secondary mt-3">Quay Lại</a>
-// //     </div>
-// //   );
-// // };
-
-// // export default OrderDetail;
-
-
-// import React, { useState, useEffect } from 'react';
-// import axios from 'axios';
-// import { useParams } from 'react-router-dom';
-// import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-// import { faStar } from '@fortawesome/free-solid-svg-icons'; // Icon sao
-// import '../../App.css';  // Đường dẫn từ src/pages/user đến src/app.css
-
-// const OrderDetail = () => {
-//   const { id } = useParams();
-//   const [orderDetails, setOrderDetails] = useState([]); // Danh sách chi tiết sản phẩm
-//   const [totalPrice, setTotalPrice] = useState(0); // Tổng tiền
-//   const [user, setUser] = useState(null); // Thông tin người dùng
-//   const [status, setStatus] = useState(''); // Trạng thái đơn hàng
-//   const [address, setAddress] = useState(''); // Địa chỉ
-//   const [rating, setRating] = useState(0); // Số sao
-//   const [review, setReview] = useState(''); // Nội dung đánh giá
-//   const [message, setMessage] = useState(''); // Thông báo lỗi/success
-//   const [alreadyReviewed, setAlreadyReviewed] = useState(false); // Kiểm tra xem đã đánh giá chưa
-
-//   useEffect(() => {
-//     axios.get(`http://localhost:8080/api/donHangND/detail/${id}`)
-//       .then(response => {
-//         const data = response.data;
-//         console.log(data);  // Kiểm tra dữ liệu trả về từ API
-//         setOrderDetails(data.orderDetails.orderDetails); // danh sách sản phẩm
-//         setTotalPrice(data.orderDetails.totalPrice); // tổng tiền
-//         setUser(data.user); // userDTO
-//         setStatus(data.status); // status đã chuyển thành chuỗi rồi
-//         setAddress(data.address); // Địa chỉ
-        
-//         // Kiểm tra nếu người dùng đã đánh giá đơn hàng
-//         if (data.user.hasReviewed) {
-//           setAlreadyReviewed(true);
-//         }
-//       })
-//       .catch(error => {
-//         console.error('Lỗi khi lấy chi tiết đơn hàng:', error);
-//       });
-//   }, [id]);
-
-//   const userId = localStorage.getItem("userId"); // Hoặc sessionStorage nếu bạn dùng cái đó
-//   const handleReviewSubmit = () => {
-//     if (alreadyReviewed) {
-//       setMessage('Bạn đã đánh giá rồi!');
-//       return; // Dừng lại nếu đã đánh giá
-//     }
-  
-//     if (rating < 1 || rating > 5) {
-//       setMessage('Số sao phải nằm trong khoảng từ 1 đến 5');
-//       return;
-//     }
-  
-//     const reviewData = {
-//       donhangId: id,
-//       taikhoanId: Number(userId), // Chuyển đổi thành số
-//       danhgia: review,
-//       sao: rating,
-//     };
-  
-//     axios.post('http://localhost:8080/api/danhgia/submit', reviewData, {
-//       headers: {
-//         'Content-Type': 'application/json',
-//       },
-//     })
-//       .then(response => {
-//         setMessage('Đánh giá thành công!');
-//         setReview(''); // Reset nội dung đánh giá
-//         setRating(0); // Reset số sao
-  
-//         // Lưu đánh giá vào localStorage
-//         const newReview = {
-//           userName: user.fullname,
-//           danhgia: review,
-//           sao: rating,
-//         };
-  
-//         let storedReviews = JSON.parse(localStorage.getItem("reviews")) || [];
-//         storedReviews.push(newReview);
-//         localStorage.setItem("reviews", JSON.stringify(storedReviews));
-//       })
-//       .catch(error => {
-//         console.log('Review data:', reviewData);
-//         setMessage('Bạn đã đánh giá đơn hàng này!');
-//         console.error('Lỗi chi tiết:', error.response.data);  // Log chi tiết lỗi từ response
-//       });
-//   };
-  
-
-//   if (!user || orderDetails.length === 0) {
-//     return <div>Loading...</div>;
-//   }
-
-//   return (
-//     <div className="container mt-5">
-//       <h2 className="text-center">Chi Tiết Đơn Hàng</h2>
-
-//       {/* Hiển thị thông tin khách hàng */}
-//       <div className="card">
-//         <div className="card-body">
-//           <p><strong>Khách Hàng:</strong> {user.fullname || 'Thông tin không có'}</p>
-//           <p><strong>Gmail:</strong> {user.email || 'Thông tin không có'}</p>
-//           <p><strong>SĐT:</strong> {user.phoneNumber || 'Thông tin không có'}</p>
-//           <p><strong>Địa Chỉ:</strong> {address || 'Thông tin không có'}</p>
-//           <p><strong>Trạng Thái:</strong> {status || 'Không xác định'}</p>
-//           {/* Kiểm tra nếu có ngày đặt */}
-//           {user.orderDate && <p><strong>Ngày Đặt:</strong> {new Date(user.orderDate).toLocaleDateString()}</p>}
-//         </div>
-//       </div>
-
-//       <h3 className="mt-4">Sản Phẩm</h3>
-//       <table className="table table-bordered">
-//         <thead>
-//           <tr>
-//             <th>Ảnh Sản Phẩm</th>
-//             <th>Tên Sản Phẩm</th>
-//             <th>Giá</th>
-//             <th>Số Lượng</th>
-//             <th>Tổng</th>
-//           </tr>
-//         </thead>
-//         <tbody>
-//           {orderDetails.map((detail, index) => (
-//             <tr key={index}>
-//               <td>
-//                 {detail.productImage ? (
-//                   <img
-//                     src={`http://localhost:8080/uploads/${detail.productImage}`}
-//                     width="80"
-//                     height="80"
-//                     alt={detail.productName}
-//                   />
-//                 ) : (
-//                   <span>Không có ảnh</span>
-//                 )}
-//               </td>
-//               <td>{detail.productName}</td>
-//               <td>{new Intl.NumberFormat().format(detail.price)} VNĐ</td>
-//               <td>{detail.quantity}</td>
-//               <td>{new Intl.NumberFormat().format(detail.price * detail.quantity)} VNĐ</td>
-//             </tr>
-//           ))}
-//           <tr>
-//             <td colSpan="4"><strong>Tổng tiền:</strong></td>
-//             <td>{new Intl.NumberFormat().format(totalPrice)} VNĐ</td>
-//           </tr>
-//         </tbody>
-//       </table>
-
-//       {/* Phần đánh giá sản phẩm */}
-//       <div className="review-section mt-5">
-//         <h4>Đánh Giá Đơn Hàng</h4>
-//         {message && <p className="message">{message}</p>}
-//         <div className="form-group">
-//           <label htmlFor="rating">Chọn số sao:</label>
-//           <div className="rating-stars">
-//             {[1, 2, 3, 4, 5].map((star) => (
-//               <FontAwesomeIcon
-//                 key={star}
-//                 icon={faStar}
-//                 color={star <= rating ? '#ffd700' : '#ccc'}
-//                 onClick={() => setRating(star)}
-//                 style={{ cursor: 'pointer', fontSize: '24px', marginRight: '5px' }}
-//               />
-//             ))}
-//           </div>
-//         </div>
-//         <div className="form-group">
-//           <label htmlFor="review">Nội dung đánh giá:</label>
-//           <textarea
-//             id="review"
-//             className="form-control"
-//             rows="4"
-//             value={review}
-//             onChange={(e) => setReview(e.target.value)}
-//             placeholder="Viết đánh giá của bạn"
-//           />
-//         </div>
-//         <button className="btn btn-primary mt-3" onClick={handleReviewSubmit} disabled={alreadyReviewed}>Gửi Đánh Giá</button>
-//       </div>
-
-//       <a href="/donHangND" className="btn btn-secondary mt-3">Quay Lại</a>
-//     </div>
-//   );
-// };
-
-// export default OrderDetail;
-
-
-
-// import React, { useState, useEffect } from 'react';
-// import axios from 'axios';
-// import { useParams } from 'react-router-dom';
-// import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-// import { faStar } from '@fortawesome/free-solid-svg-icons'; // Icon sao
-// import '../../App.css';  // Đường dẫn từ src/pages/user đến src/app.css
-
-// const OrderDetail = () => {
-//   const { id } = useParams();
-//   const [orderDetails, setOrderDetails] = useState([]); // Danh sách chi tiết sản phẩm
-//   const [totalPrice, setTotalPrice] = useState(0); // Tổng tiền
-//   const [user, setUser] = useState(null); // Thông tin người dùng
-//   const [status, setStatus] = useState(''); // Trạng thái đơn hàng
-//   const [address, setAddress] = useState(''); // Địa chỉ
-//   const [rating, setRating] = useState(0); // Số sao
-//   const [review, setReview] = useState(''); // Nội dung đánh giá
-//   const [message, setMessage] = useState(''); // Thông báo lỗi/success
-//   const [alreadyReviewed, setAlreadyReviewed] = useState(false); // Kiểm tra xem đã đánh giá chưa
-
-//   useEffect(() => {
-//     axios.get(`http://localhost:8080/api/donHangND/detail/${id}`)
-//       .then(response => {
-//         const data = response.data;
-//         console.log(data);  // Kiểm tra dữ liệu trả về từ API
-//         setOrderDetails(data.orderDetails.orderDetails); // danh sách sản phẩm
-//         setTotalPrice(data.orderDetails.totalPrice); // tổng tiền
-//         setUser(data.user); // userDTO
-//         setStatus(data.status); // status đã chuyển thành chuỗi rồi
-//         setAddress(data.address); // Địa chỉ
-        
-//         // Kiểm tra nếu người dùng đã đánh giá đơn hàng
-//         if (data.user.hasReviewed) {
-//           setAlreadyReviewed(true);
-//         }
-//       })
-//       .catch(error => {
-//         console.error('Lỗi khi lấy chi tiết đơn hàng:', error);
-//       });
-//   }, [id]);
-
-//   const userId = localStorage.getItem("userId"); // Hoặc sessionStorage nếu bạn dùng cái đó
-  
-//   // Hàm gửi đánh giá
-//   const handleReviewSubmit = () => {
-//     if (alreadyReviewed) {
-//       setMessage('Bạn đã đánh giá rồi!');
-//       return; // Dừng lại nếu đã đánh giá
-//     }
-  
-//     if (rating < 1 || rating > 5) {
-//       setMessage('Số sao phải nằm trong khoảng từ 1 đến 5');
-//       return;
-//     }
-  
-//     const reviewData = {
-//       donhangId: id,
-//       taikhoanId: Number(userId), // Chuyển đổi thành số
-//       danhgia: review,
-//       sao: rating,
-//     };
-  
-//     axios.post('http://localhost:8080/api/danhgia/submit', reviewData, {
-//       headers: {
-//         'Content-Type': 'application/json',
-//       },
-//     })
-//       .then(response => {
-//         setMessage('Đánh giá thành công!');
-//         setReview(''); // Reset nội dung đánh giá
-//         setRating(0); // Reset số sao
-  
-//         // Lưu đánh giá vào localStorage
-//         const newReview = {
-//           userName: user.fullname,
-//           danhgia: review,
-//           sao: rating,
-//         };
-  
-//         let storedReviews = JSON.parse(localStorage.getItem("reviews")) || [];
-//         storedReviews.push(newReview);
-//         localStorage.setItem("reviews", JSON.stringify(storedReviews));
-//       })
-//       .catch(error => {
-//         console.log('Review data:', reviewData);
-//         setMessage('Có lỗi xảy ra khi gửi đánh giá!');
-//         console.error('Lỗi chi tiết:', error.response.data);  // Log chi tiết lỗi từ response
-//       });
-//   };
-
-//   // Nếu chưa có thông tin đơn hàng hoặc người dùng, hiển thị loading
-//   if (!user || orderDetails.length === 0) {
-//     return <div>Loading...</div>;
-//   }
-
-//   return (
-//     <div className="container mt-5">
-//       <h2 className="text-center">Chi Tiết Đơn Hàng</h2>
-
-//       {/* Hiển thị thông tin khách hàng */}
-//       <div className="card">
-//         <div className="card-body">
-//           <p><strong>Khách Hàng:</strong> {user.fullname || 'Thông tin không có'}</p>
-//           <p><strong>Gmail:</strong> {user.email || 'Thông tin không có'}</p>
-//           <p><strong>SĐT:</strong> {user.phoneNumber || 'Thông tin không có'}</p>
-//           <p><strong>Địa Chỉ:</strong> {address || 'Thông tin không có'}</p>
-//           <p><strong>Trạng Thái:</strong> {status || 'Không xác định'}</p>
-//           {/* Kiểm tra nếu có ngày đặt */}
-//           {user.orderDate && <p><strong>Ngày Đặt:</strong> {new Date(user.orderDate).toLocaleDateString()}</p>}
-//         </div>
-//       </div>
-
-//       <h3 className="mt-4">Sản Phẩm</h3>
-//       <table className="table table-bordered">
-//         <thead>
-//           <tr>
-//             <th>Ảnh Sản Phẩm</th>
-//             <th>Tên Sản Phẩm</th>
-//             <th>Giá</th>
-//             <th>Số Lượng</th>
-//             <th>Tổng</th>
-//           </tr>
-//         </thead>
-//         <tbody>
-//           {orderDetails.map((detail, index) => (
-//             <tr key={index}>
-//               <td>
-//                 {detail.productImage ? (
-//                   <img
-//                     src={`http://localhost:8080/uploads/${detail.productImage}`}
-//                     width="80"
-//                     height="80"
-//                     alt={detail.productName}
-//                   />
-//                 ) : (
-//                   <span>Không có ảnh</span>
-//                 )}
-//               </td>
-//               <td>{detail.productName}</td>
-//               <td>{new Intl.NumberFormat().format(detail.price)} VNĐ</td>
-//               <td>{detail.quantity}</td>
-//               <td>{new Intl.NumberFormat().format(detail.price * detail.quantity)} VNĐ</td>
-//             </tr>
-//           ))}
-//           <tr>
-//             <td colSpan="4"><strong>Tổng tiền:</strong></td>
-//             <td>{new Intl.NumberFormat().format(totalPrice)} VNĐ</td>
-//           </tr>
-//         </tbody>
-//       </table>
-
-//       {/* Phần đánh giá sản phẩm */}
-//       <div className="review-section mt-5">
-//         <h4>Đánh Giá Đơn Hàng</h4>
-//         {message && <p className="message">{message}</p>}
-//         <div className="form-group">
-//           <label htmlFor="rating">Chọn số sao:</label>
-//           <div className="rating-stars">
-//             {[1, 2, 3, 4, 5].map((star) => (
-//               <FontAwesomeIcon
-//                 key={star}
-//                 icon={faStar}
-//                 color={star <= rating ? '#ffd700' : '#ccc'}
-//                 onClick={() => setRating(star)}
-//                 style={{ cursor: 'pointer', fontSize: '24px', marginRight: '5px' }}
-//               />
-//             ))}
-//           </div>
-//         </div>
-//         <div className="form-group">
-//           <label htmlFor="review">Nội dung đánh giá:</label>
-//           <textarea
-//             id="review"
-//             className="form-control"
-//             rows="4"
-//             value={review}
-//             onChange={(e) => setReview(e.target.value)}
-//             placeholder="Viết đánh giá của bạn"
-//           />
-//         </div>
-//         <button className="btn btn-primary mt-3" onClick={handleReviewSubmit} disabled={alreadyReviewed}>Gửi Đánh Giá</button>
-//       </div>
-
-//       <a href="/donHangND" className="btn btn-secondary mt-3">Quay Lại</a>
-//     </div>
-//   );
-// };
-
-// export default OrderDetail;
-
-
-
-// import React, { useState, useEffect } from 'react';
-// import axios from 'axios';
-// import { useParams } from 'react-router-dom';
-// import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-// import { faStar } from '@fortawesome/free-solid-svg-icons';
-// import '../../App.css';
-
-// const OrderDetail = () => {
-//   const { id } = useParams();
-//   const [orderDetails, setOrderDetails] = useState([]);
-//   const [totalPrice, setTotalPrice] = useState(0);
-//   const [user, setUser] = useState(null);
-//   const [status, setStatus] = useState('');
-//   const [address, setAddress] = useState('');
-//   const [productReviews, setProductReviews] = useState([]);
-//   const [message, setMessage] = useState('');
-//   const [orderDate, setOrderDate] = useState(null);
-
-//   const userId = localStorage.getItem("userId");
-
-//   useEffect(() => {
-//     axios.get(`http://localhost:8080/api/donHangND/detail/${id}`)
-//       .then(response => {
-//         const data = response.data;
-//         setOrderDetails(data.orderDetails.orderDetails);
-//         setTotalPrice(data.orderDetails.totalPrice);
-//         setOrderDate(data.orderDetails.orderDate);
-//         setUser(data.user);
-//         setStatus(data.status);
-//         setAddress(data.address);
-
-//         const initialReviews = data.orderDetails.orderDetails.map(item => ({
-//           productId: item.productId,
-//           rating: 0,
-//           review: '',
-//           submitted: false,
-//         }));
-//         setProductReviews(initialReviews);
-//       })
-//       .catch(error => {
-//         console.error('Lỗi khi lấy chi tiết đơn hàng:', error);
-//       });
-//   }, [id]);
-
-//   const handleRatingChange = (index, rating) => {
-//     const updated = [...productReviews];
-//     updated[index].rating = rating;
-//     setProductReviews(updated);
-//   };
-  
-//   const handleReviewChange = (index, value) => {
-//     const updated = [...productReviews];
-//     updated[index].review = value;
-//     setProductReviews(updated);
-//   };
-  
-//   const handleSubmitReview = (index) => {
-//     const { productId, rating, review } = productReviews[index];
-  
-//     // Kiểm tra xem productId có hợp lệ không
-//     if (!productId) {
-//       setMessage('Sản phẩm không hợp lệ');
-//       console.error('Product ID is invalid:', productId); // Log giá trị của productId
-//       return;
-//     }
-  
-//     // Kiểm tra rating hợp lệ (từ 1 đến 5)
-//     if (rating < 1 || rating > 5) {
-//       setMessage('Số sao phải từ 1 đến 5');
-//       return;
-//     }
-  
-//     // Kiểm tra xem review có được nhập hay không
-//     if (!review || review.trim() === '') {
-//       setMessage('Vui lòng nhập đánh giá');
-//       return;
-//     }
-  
-//     // Đảm bảo các ID không bị null hoặc undefined
-//     const reviewData = {
-//       donhangId: Number(id),  // Kiểm tra giá trị id
-//       taikhoanId: Number(userId),  // Kiểm tra giá trị userId
-//       sanphamId: productId,  // Kiểm tra giá trị productId
-//       sao: rating,
-//       danhgia: review
-//     };
-  
-//     // In ra để debug
-//     console.log('Review data:', reviewData);
-  
-//     // Gửi yêu cầu đánh giá
-//     axios.post('http://localhost:8080/api/danhgia/submit', reviewData)
-//       .then(() => {
-//         const updated = [...productReviews];
-//         updated[index].submitted = true;  // Đánh dấu đã gửi thành công
-//         setProductReviews(updated);
-//         setMessage('Đánh giá thành công!');
-//       })
-//       .catch(error => {
-//         setMessage('Lỗi khi gửi đánh giá!');
-//         console.error(error.response?.data || error);
-//       });
-//   };
-  
-
-//   if (!user || orderDetails.length === 0) return <div>Loading...</div>;
-
-//   return (
-//     <div className="container mt-5">
-//       <h2 className="text-center">Chi Tiết Đơn Hàng</h2>
-
-//       <div className="card">
-//         <div className="card-body">
-//           <p><strong>Khách Hàng:</strong> {user.fullname}</p>
-//           <p><strong>Gmail:</strong> {user.email}</p>
-//           <p><strong>SĐT:</strong> {user.phoneNumber}</p>
-//           <p><strong>Địa Chỉ:</strong> {address}</p>
-//           <p><strong>Trạng Thái:</strong> {status}</p>
-//           {orderDate && (
-//             <p><strong>Ngày Đặt:</strong> {new Date(orderDate).toLocaleDateString()}</p>
-//           )}
-//         </div>
-//       </div>
-
-//       <h3 className="mt-4">Sản Phẩm</h3>
-//       <table className="table table-bordered">
-//         <thead>
-//           <tr>
-//             <th>Ảnh</th>
-//             <th>Tên</th>
-//             <th>Giá</th>
-//             <th>Số Lượng</th>
-//             <th>Tổng</th>
-//             <th>Đánh Giá</th>
-//           </tr>
-//         </thead>
-//         <tbody>
-//           {orderDetails.map((detail, index) => (
-//             <tr key={index}>
-//               <td>
-//                 {detail.productImage ? (
-//                   <img src={`http://localhost:8080/uploads/${detail.productImage}`} alt={detail.productName} width="80" height="80" />
-//                 ) : 'Không có ảnh'}
-//               </td>
-//               <td>{detail.productName}</td>
-//               <td>{detail.price.toLocaleString()} VNĐ</td>
-//               <td>{detail.quantity}</td>
-//               <td>{(detail.price * detail.quantity).toLocaleString()} VNĐ</td>
-//               <td>
-//                 {productReviews[index]?.submitted ? (
-//                   <span className="text-success">Đã đánh giá</span>
-//                 ) : (
-//                   <div>
-//                     <div className="mb-1">
-//                       {[1, 2, 3, 4, 5].map((star) => (
-//                         <FontAwesomeIcon
-//                           key={star}
-//                           icon={faStar}
-//                           color={star <= productReviews[index].rating ? '#ffd700' : '#ccc'}
-//                           onClick={() => handleRatingChange(index, star)}
-//                           style={{ cursor: 'pointer', fontSize: '20px' }}
-//                         />
-//                       ))}
-//                     </div>
-//                     <textarea
-//                       rows="2"
-//                       className="form-control mb-2"
-//                       placeholder="Nội dung đánh giá..."
-//                       value={productReviews[index].review}
-//                       onChange={(e) => handleReviewChange(index, e.target.value)}
-//                     />
-//                     <button
-//                       className="btn btn-sm btn-primary"
-//                       onClick={() => handleSubmitReview(index)}
-//                     >
-//                       Gửi
-//                     </button>
-//                   </div>
-//                 )}
-//               </td>
-//             </tr>
-//           ))}
-//           <tr>
-//             <td colSpan="4"><strong>Tổng tiền:</strong></td>
-//             <td colSpan="2">{totalPrice.toLocaleString()} VNĐ</td>
-//           </tr>
-//         </tbody>
-//       </table>
-
-//       {message && <div className="alert alert-info mt-3">{message}</div>}
-//       <a href="/donHangND" className="btn btn-secondary mt-3">Quay Lại</a>
-//     </div>
-//   );
-// };
-
-// export default OrderDetail;
-
-
-// // // import React, { useState, useEffect } from 'react';
-// // // import axios from 'axios';
-// // // import { useParams } from 'react-router-dom';
-// // // import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-// // // import { faStar } from '@fortawesome/free-solid-svg-icons'; // Icon sao
-// // // import '../../App.css';  // Đường dẫn từ src/pages/user đến src/app.css
-
-// // // const OrderDetail = () => {
-// // //   const { id } = useParams();
-// // //   const [orderDetails, setOrderDetails] = useState([]); // Danh sách chi tiết sản phẩm
-// // //   const [totalPrice, setTotalPrice] = useState(0); // Tổng tiền
-// // //   const [user, setUser] = useState(null); // Thông tin người dùng
-// // //   const [status, setStatus] = useState(''); // Trạng thái đơn hàng
-// // //   const [address, setAddress] = useState(''); // Địa chỉ
-// // //   const [rating, setRating] = useState(0); // Số sao
-// // //   const [review, setReview] = useState(''); // Nội dung đánh giá
-// // //   const [message, setMessage] = useState(''); // Thông báo lỗi/success
-
-// // //   useEffect(() => {
-// // //     axios.get(`http://localhost:8080/api/donHangND/detail/${id}`)
-// // //       .then(response => {
-// // //         const data = response.data;
-// // //         console.log(data);  // Kiểm tra dữ liệu trả về từ API
-// // //         setOrderDetails(data.orderDetails.orderDetails); // danh sách sản phẩm
-// // //         setTotalPrice(data.orderDetails.totalPrice); // tổng tiền
-// // //         setUser(data.user); // userDTO
-// // //         setStatus(data.status); // status đã chuyển thành chuỗi rồi
-// // //         setAddress(data.address); // Địa chỉ
-// // //       })
-// // //       .catch(error => {
-// // //         console.error('Lỗi khi lấy chi tiết đơn hàng:', error);
-// // //       });
-// // //   }, [id]);
-
-// // //   const userId = localStorage.getItem("userId"); // Hoặc sessionStorage nếu bạn dùng cái đó
-
-// // //   const handleReviewSubmit = () => {
-// // //     if (rating < 1 || rating > 5) {
-// // //       setMessage('Số sao phải nằm trong khoảng từ 1 đến 5');
-// // //       return;
-// // //     }
-  
-// // //     const reviewData = {
-// // //       donhangId: id,
-// // //       taikhoanId: Number(userId), // Chuyển đổi thành số
-// // //       danhgia: review,
-// // //       sao: rating,
-// // //     };
-  
-// // //     axios.post('http://localhost:8080/api/danhgia/submit', reviewData, {
-// // //       headers: {
-// // //         'Content-Type': 'application/json',
-// // //       },
-// // //     })
-// // //       .then(response => {
-// // //         setMessage('Đánh giá thành công!');
-// // //         setReview(''); // Reset nội dung đánh giá
-// // //         setRating(0); // Reset số sao
-// // //       })
-// // //       .catch(error => {
-// // //         console.log('Review data:', reviewData);
-// // //         setMessage('Lỗi khi gửi đánh giá!');
-// // //         console.error('Lỗi chi tiết:', error.response.data);  // Log chi tiết lỗi từ response
-// // //       });
-// // //   };
-
-// // //   if (!user || orderDetails.length === 0) {
-// // //     return <div>Loading...</div>;
-// // //   }
-
-// // //   return (
-// // //     <div className="container mt-5">
-// // //       <h2 className="text-center">Chi Tiết Đơn Hàng</h2>
-
-// // //       {/* Hiển thị thông tin khách hàng */}
-// // //       <div className="card">
-// // //         <div className="card-body">
-// // //           <p><strong>Khách Hàng:</strong> {user.fullname || 'Thông tin không có'}</p>
-// // //           <p><strong>Gmail:</strong> {user.email || 'Thông tin không có'}</p>
-// // //           <p><strong>SĐT:</strong> {user.phoneNumber || 'Thông tin không có'}</p>
-// // //           <p><strong>Địa Chỉ:</strong> {address || 'Thông tin không có'}</p>
-// // //           <p><strong>Trạng Thái:</strong> {status || 'Không xác định'}</p>
-// // //           {/* Kiểm tra nếu có ngày đặt */}
-// // //           {user.orderDate && <p><strong>Ngày Đặt:</strong> {new Date(user.orderDate).toLocaleDateString()}</p>}
-// // //         </div>
-// // //       </div>
-
-// // //       <h3 className="mt-4">Sản Phẩm</h3>
-// // //       <table className="table table-bordered">
-// // //         <thead>
-// // //           <tr>
-// // //             <th>Ảnh Sản Phẩm</th>
-// // //             <th>Tên Sản Phẩm</th>
-// // //             <th>Giá</th>
-// // //             <th>Số Lượng</th>
-// // //             <th>Tổng</th>
-// // //           </tr>
-// // //         </thead>
-// // //         <tbody>
-// // //           {orderDetails.map((detail, index) => (
-// // //             <tr key={index}>
-// // //               <td>
-// // //                 {detail.productImage ? (
-// // //                   <img
-// // //                     src={`http://localhost:8080/uploads/${detail.productImage}`}
-// // //                     width="80"
-// // //                     height="80"
-// // //                     alt={detail.productName}
-// // //                   />
-// // //                 ) : (
-// // //                   <span>Không có ảnh</span>
-// // //                 )}
-// // //               </td>
-// // //               <td>{detail.productName}</td>
-// // //               <td>{new Intl.NumberFormat().format(detail.price)} VNĐ</td>
-// // //               <td>{detail.quantity}</td>
-// // //               <td>{new Intl.NumberFormat().format(detail.price * detail.quantity)} VNĐ</td>
-// // //             </tr>
-// // //           ))}
-// // //           <tr>
-// // //             <td colSpan="4"><strong>Tổng tiền:</strong></td>
-// // //             <td>{new Intl.NumberFormat().format(totalPrice)} VNĐ</td>
-// // //           </tr>
-// // //         </tbody>
-// // //       </table>
-
-// // //       {/* Phần đánh giá sản phẩm */}
-// // //       <div className="review-section mt-5">
-// // //         <h4>Đánh Giá Đơn Hàng</h4>
-// // //         {message && <p className="message">{message}</p>}
-// // //         <div className="form-group">
-// // //           <label htmlFor="rating">Chọn số sao:</label>
-// // //           <div className="rating-stars">
-// // //             {[1, 2, 3, 4, 5].map((star) => (
-// // //               <FontAwesomeIcon
-// // //                 key={star}
-// // //                 icon={faStar}
-// // //                 color={star <= rating ? '#ffd700' : '#ccc'}
-// // //                 onClick={() => setRating(star)}
-// // //                 style={{ cursor: 'pointer', fontSize: '24px', marginRight: '5px' }}
-// // //               />
-// // //             ))}
-// // //           </div>
-// // //         </div>
-// // //         <div className="form-group">
-// // //           <label htmlFor="review">Nội dung đánh giá:</label>
-// // //           <textarea
-// // //             id="review"
-// // //             className="form-control"
-// // //             rows="4"
-// // //             value={review}
-// // //             onChange={(e) => setReview(e.target.value)}
-// // //             placeholder="Viết đánh giá của bạn"
-// // //           />
-// // //         </div>
-// // //         <button className="btn btn-primary mt-3" onClick={handleReviewSubmit}>Gửi Đánh Giá</button>
-// // //       </div>
-
-// // //       <a href="/donHangND" className="btn btn-secondary mt-3">Quay Lại</a>
-// // //     </div>
-// // //   );
-// // // };
-
-// // // export default OrderDetail;
-
-
-
-// // import React, { useState, useEffect } from 'react';
-// // import axios from 'axios';
-// // import { useParams } from 'react-router-dom';
-// // import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-// // import { faStar } from '@fortawesome/free-solid-svg-icons'; // Icon sao
-// // import '../../App.css';  // Đường dẫn từ src/pages/user đến src/app.css
-
-// // const OrderDetail = () => {
-// //   const { id } = useParams();
-// //   const [orderDetails, setOrderDetails] = useState([]); // Danh sách chi tiết sản phẩm
-// //   const [totalPrice, setTotalPrice] = useState(0); // Tổng tiền
-// //   const [user, setUser] = useState(null); // Thông tin người dùng
-// //   const [status, setStatus] = useState(''); // Trạng thái đơn hàng
-// //   const [address, setAddress] = useState(''); // Địa chỉ
-// //   const [rating, setRating] = useState(0); // Số sao
-// //   const [review, setReview] = useState(''); // Nội dung đánh giá
-// //   const [message, setMessage] = useState(''); // Thông báo lỗi/success
-// //   const [alreadyReviewed, setAlreadyReviewed] = useState(false); // Kiểm tra xem đã đánh giá chưa
-
-// //   useEffect(() => {
-// //     axios.get(`http://localhost:8080/api/donHangND/detail/${id}`)
-// //       .then(response => {
-// //         const data = response.data;
-// //         console.log(data);  // Kiểm tra dữ liệu trả về từ API
-// //         setOrderDetails(data.orderDetails.orderDetails); // danh sách sản phẩm
-// //         setTotalPrice(data.orderDetails.totalPrice); // tổng tiền
-// //         setUser(data.user); // userDTO
-// //         setStatus(data.status); // status đã chuyển thành chuỗi rồi
-// //         setAddress(data.address); // Địa chỉ
-        
-// //         // Kiểm tra nếu người dùng đã đánh giá đơn hàng
-// //         if (data.user.hasReviewed) {
-// //           setAlreadyReviewed(true);
-// //         }
-// //       })
-// //       .catch(error => {
-// //         console.error('Lỗi khi lấy chi tiết đơn hàng:', error);
-// //       });
-// //   }, [id]);
-
-// //   const userId = localStorage.getItem("userId"); // Hoặc sessionStorage nếu bạn dùng cái đó
-
-  
-// //   const handleReviewSubmit = () => {
-// //     if (alreadyReviewed) {
-// //       setMessage('Bạn đã đánh giá rồi!');
-// //       return; // Dừng lại nếu đã đánh giá
-// //     }
-  
-// //     if (rating < 1 || rating > 5) {
-// //       setMessage('Số sao phải nằm trong khoảng từ 1 đến 5');
-// //       return;
-// //     }
-  
-// //     const reviewData = {
-// //       donhangId: id,
-// //       taikhoanId: Number(userId), // Chuyển đổi thành số
-// //       danhgia: review,
-// //       sao: rating,
-// //     };
-  
-// //     axios.post('http://localhost:8080/api/danhgia/submit', reviewData, {
-// //       headers: {
-// //         'Content-Type': 'application/json',
-// //       },
-// //     })
-// //       .then(response => {
-// //         setMessage('Đánh giá thành công!');
-// //         setReview(''); // Reset nội dung đánh giá
-// //         setRating(0); // Reset số sao
-  
-// //         // Lưu đánh giá vào localStorage
-// //         const newReview = {
-// //           userName: user.fullname,
-// //           danhgia: review,
-// //           sao: rating,
-// //         };
-  
-// //         let storedReviews = JSON.parse(localStorage.getItem("reviews")) || [];
-// //         storedReviews.push(newReview);
-// //         localStorage.setItem("reviews", JSON.stringify(storedReviews));
-// //       })
-// //       .catch(error => {
-// //         console.log('Review data:', reviewData);
-// //         setMessage('Bạn đã đánh giá đơn hàng này!');
-// //         console.error('Lỗi chi tiết:', error.response.data);  // Log chi tiết lỗi từ response
-// //       });
-// //   };
-  
-
-// //   if (!user || orderDetails.length === 0) {
-// //     return <div>Loading...</div>;
-// //   }
-
-// //   return (
-// //     <div className="container mt-5">
-// //       <h2 className="text-center">Chi Tiết Đơn Hàng</h2>
-
-// //       {/* Hiển thị thông tin khách hàng */}
-// //       <div className="card">
-// //         <div className="card-body">
-// //           <p><strong>Khách Hàng:</strong> {user.fullname || 'Thông tin không có'}</p>
-// //           <p><strong>Gmail:</strong> {user.email || 'Thông tin không có'}</p>
-// //           <p><strong>SĐT:</strong> {user.phoneNumber || 'Thông tin không có'}</p>
-// //           <p><strong>Địa Chỉ:</strong> {address || 'Thông tin không có'}</p>
-// //           <p><strong>Trạng Thái:</strong> {status || 'Không xác định'}</p>
-// //           {/* Kiểm tra nếu có ngày đặt */}
-// //           {user.orderDate && <p><strong>Ngày Đặt:</strong> {new Date(user.orderDate).toLocaleDateString()}</p>}
-// //         </div>
-// //       </div>
-
-// //       <h3 className="mt-4">Sản Phẩm</h3>
-// //       <table className="table table-bordered">
-// //         <thead>
-// //           <tr>
-// //             <th>Ảnh Sản Phẩm</th>
-// //             <th>Tên Sản Phẩm</th>
-// //             <th>Giá</th>
-// //             <th>Số Lượng</th>
-// //             <th>Tổng</th>
-// //           </tr>
-// //         </thead>
-// //         <tbody>
-// //           {orderDetails.map((detail, index) => (
-// //             <tr key={index}>
-// //               <td>
-// //                 {detail.productImage ? (
-// //                   <img
-// //                     src={`http://localhost:8080/uploads/${detail.productImage}`}
-// //                     width="80"
-// //                     height="80"
-// //                     alt={detail.productName}
-// //                   />
-// //                 ) : (
-// //                   <span>Không có ảnh</span>
-// //                 )}
-// //               </td>
-// //               <td>{detail.productName}</td>
-// //               <td>{new Intl.NumberFormat().format(detail.price)} VNĐ</td>
-// //               <td>{detail.quantity}</td>
-// //               <td>{new Intl.NumberFormat().format(detail.price * detail.quantity)} VNĐ</td>
-// //             </tr>
-// //           ))}
-// //           <tr>
-// //             <td colSpan="4"><strong>Tổng tiền:</strong></td>
-// //             <td>{new Intl.NumberFormat().format(totalPrice)} VNĐ</td>
-// //           </tr>
-// //         </tbody>
-// //       </table>
-
-// //       {/* Phần đánh giá sản phẩm */}
-// //       <div className="review-section mt-5">
-// //         <h4>Đánh Giá Đơn Hàng</h4>
-// //         {message && <p className="message">{message}</p>}
-// //         <div className="form-group">
-// //           <label htmlFor="rating">Chọn số sao:</label>
-// //           <div className="rating-stars">
-// //             {[1, 2, 3, 4, 5].map((star) => (
-// //               <FontAwesomeIcon
-// //                 key={star}
-// //                 icon={faStar}
-// //                 color={star <= rating ? '#ffd700' : '#ccc'}
-// //                 onClick={() => setRating(star)}
-// //                 style={{ cursor: 'pointer', fontSize: '24px', marginRight: '5px' }}
-// //               />
-// //             ))}
-// //           </div>
-// //         </div>
-// //         <div className="form-group">
-// //           <label htmlFor="review">Nội dung đánh giá:</label>
-// //           <textarea
-// //             id="review"
-// //             className="form-control"
-// //             rows="4"
-// //             value={review}
-// //             onChange={(e) => setReview(e.target.value)}
-// //             placeholder="Viết đánh giá của bạn"
-// //           />
-// //         </div>
-// //         <button className="btn btn-primary mt-3" onClick={handleReviewSubmit} disabled={alreadyReviewed}>Gửi Đánh Giá</button>
-// //       </div>
-
-// //       <a href="/donHangND" className="btn btn-secondary mt-3">Quay Lại</a>
-// //     </div>
-// //   );
-// // };
-
-// // export default OrderDetail;
-
-
-
-
-// // import React, { useState, useEffect } from 'react';
-// // import axios from 'axios';
-// // import { useParams } from 'react-router-dom';
-// // import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-// // import { faStar } from '@fortawesome/free-solid-svg-icons'; // Icon sao
-// // import '../../App.css';  // Đường dẫn từ src/pages/user đến src/app.css
-
-// // const OrderDetail = () => {
-// //   const { id } = useParams();
-// //   const [orderDetails, setOrderDetails] = useState([]); // Danh sách chi tiết sản phẩm
-// //   const [totalPrice, setTotalPrice] = useState(0); // Tổng tiền
-// //   const [user, setUser] = useState(null); // Thông tin người dùng
-// //   const [status, setStatus] = useState(''); // Trạng thái đơn hàng
-// //   const [address, setAddress] = useState(''); // Địa chỉ
-// //   const [rating, setRating] = useState(0); // Số sao
-// //   const [review, setReview] = useState(''); // Nội dung đánh giá
-// //   const [message, setMessage] = useState(''); // Thông báo lỗi/success
-// //   const [alreadyReviewed, setAlreadyReviewed] = useState(false); // Kiểm tra xem đã đánh giá chưa
-
-// //   useEffect(() => {
-// //     axios.get(`http://localhost:8080/api/donHangND/detail/${id}`)
-// //       .then(response => {
-// //         const data = response.data;
-// //         console.log(data);  // Kiểm tra dữ liệu trả về từ API
-// //         setOrderDetails(data.orderDetails.orderDetails); // danh sách sản phẩm
-// //         setTotalPrice(data.orderDetails.totalPrice); // tổng tiền
-// //         setUser(data.user); // userDTO
-// //         setStatus(data.status); // status đã chuyển thành chuỗi rồi
-// //         setAddress(data.address); // Địa chỉ
-        
-// //         // Kiểm tra nếu người dùng đã đánh giá đơn hàng
-// //         if (data.user.hasReviewed) {
-// //           setAlreadyReviewed(true);
-// //         }
-// //       })
-// //       .catch(error => {
-// //         console.error('Lỗi khi lấy chi tiết đơn hàng:', error);
-// //         setMessage('Đã xảy ra lỗi khi lấy thông tin đơn hàng!');
-// //       });
-// //   }, [id]);
-
-  
-// //   const userId = localStorage.getItem("userId"); // Hoặc sessionStorage nếu bạn dùng cái đó
-
-// //   const handleReviewSubmit = () => {
-// //     if (alreadyReviewed) {
-// //       setMessage('Bạn đã đánh giá rồi!');
-// //       return; // Dừng lại nếu đã đánh giá
-// //     }
-  
-// //     if (rating < 1 || rating > 5) {
-// //       setMessage('Số sao phải nằm trong khoảng từ 1 đến 5');
-// //       return;
-// //     }
-  
-// //     if (!review.trim()) {
-// //       setMessage('Vui lòng viết nội dung đánh giá.');
-// //       return;
-// //     }
-
-// //     const reviewData = {
-// //       donhangId: id,
-// //       taikhoanId: Number(userId), // Chuyển đổi thành số
-// //       danhgia: review,
-// //       sao: rating,
-// //     };
-  
-// //     axios.post('http://localhost:8080/api/danhgia/submit', reviewData, {
-// //       headers: {
-// //         'Content-Type': 'application/json',
-// //       },
-// //     })
-// //       .then(response => {
-// //         setMessage('Đánh giá thành công!');
-// //         setReview(''); // Reset nội dung đánh giá
-// //         setRating(0); // Reset số sao
-  
-// //         // Lưu đánh giá vào localStorage
-// //         const newReview = {
-// //           userName: user.fullname,
-// //           danhgia: review,
-// //           sao: rating,
-// //         };
-  
-// //         let storedReviews = JSON.parse(localStorage.getItem("reviews")) || [];
-// //         storedReviews.push(newReview);
-// //         localStorage.setItem("reviews", JSON.stringify(storedReviews));
-// //       })
-// //       .catch(error => {
-// //         console.log('Review data:', reviewData);
-// //         setMessage('đơn hàng này bạn đánh giá!');
-// //         console.error('Lỗi chi tiết:', error.response.data);  // Log chi tiết lỗi từ response
-// //       });
-// //   };
-  
-
-// //   if (!user || orderDetails.length === 0) {
-// //     return <div>Loading...</div>;
-// //   }
-
-// //   return (
-// //     <div className="container mt-5">
-// //       <h2 className="text-center">Chi Tiết Đơn Hàng</h2>
-
-// //       {/* Hiển thị thông tin khách hàng */}
-// //       <div className="card">
-// //         <div className="card-body">
-// //           <p><strong>Khách Hàng:</strong> {user.fullname || 'Thông tin không có'}</p>
-// //           <p><strong>Gmail:</strong> {user.email || 'Thông tin không có'}</p>
-// //           <p><strong>SĐT:</strong> {user.phoneNumber || 'Thông tin không có'}</p>
-// //           <p><strong>Địa Chỉ:</strong> {address || 'Thông tin không có'}</p>
-// //           <p><strong>Trạng Thái:</strong> {status || 'Không xác định'}</p>
-// //           {/* Kiểm tra nếu có ngày đặt */}
-// //           {user.orderDate && <p><strong>Ngày Đặt:</strong> {new Date(user.orderDate).toLocaleDateString()}</p>}
-// //         </div>
-// //       </div>
-
-// //       <h3 className="mt-4">Sản Phẩm</h3>
-// //       <table className="table table-bordered">
-// //         <thead>
-// //           <tr>
-// //             <th>Ảnh Sản Phẩm</th>
-// //             <th>Tên Sản Phẩm</th>
-// //             <th>Giá</th>
-// //             <th>Số Lượng</th>
-// //             <th>Tổng</th>
-// //           </tr>
-// //         </thead>
-// //         <tbody>
-// //           {orderDetails.map((detail, index) => (
-// //             <tr key={index}>
-// //               <td>
-// //                 {detail.productImage ? (
-// //                   <img
-// //                     src={`http://localhost:8080/uploads/${detail.productImage}`}
-// //                     width="80"
-// //                     height="80"
-// //                     alt={detail.productName}
-// //                   />
-// //                 ) : (
-// //                   <span>Không có ảnh</span>
-// //                 )}
-// //               </td>
-// //               <td>{detail.productName}</td>
-// //               <td>{new Intl.NumberFormat().format(detail.price)} VNĐ</td>
-// //               <td>{detail.quantity}</td>
-// //               <td>{new Intl.NumberFormat().format(detail.price * detail.quantity)} VNĐ</td>
-// //             </tr>
-// //           ))}
-// //           <tr>
-// //             <td colSpan="4"><strong>Tổng tiền:</strong></td>
-// //             <td>{new Intl.NumberFormat().format(totalPrice)} VNĐ</td>
-// //           </tr>
-// //         </tbody>
-// //       </table>
-
-// //       {/* Phần đánh giá sản phẩm */}
-// //       <div className="review-section mt-5">
-// //         <h4>Đánh Giá Đơn Hàng</h4>
-// //         {message && <p className="message">{message}</p>}
-// //         <div className="form-group">
-// //           <label htmlFor="rating">Chọn số sao:</label>
-// //           <div className="rating-stars">
-// //             {[1, 2, 3, 4, 5].map((star) => (
-// //               <FontAwesomeIcon
-// //                 key={star}
-// //                 icon={faStar}
-// //                 color={star <= rating ? '#ffd700' : '#ccc'}
-// //                 onClick={() => setRating(star)}
-// //                 style={{ cursor: 'pointer', fontSize: '24px', marginRight: '5px' }}
-// //               />
-// //             ))}
-// //           </div>
-// //         </div>
-// //         <div className="form-group">
-// //           <label htmlFor="review">Nội dung đánh giá:</label>
-// //           <textarea
-// //             id="review"
-// //             className="form-control"
-// //             rows="4"
-// //             value={review}
-// //             onChange={(e) => setReview(e.target.value)}
-// //             placeholder="Viết đánh giá của bạn"
-// //           />
-// //         </div>
-// //         <button className="btn btn-primary mt-3" onClick={handleReviewSubmit} disabled={alreadyReviewed}>Gửi Đánh Giá</button>
-// //       </div>
-
-// //       <a href="/donHangND" className="btn btn-secondary mt-3">Quay Lại</a>
-// //     </div>
-// //   );
-// // };
-
-// // export default OrderDetail;
-
-
-// import React, { useState, useEffect } from 'react';
-// import axios from 'axios';
-// import { useParams } from 'react-router-dom';
-// import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-// import { faStar } from '@fortawesome/free-solid-svg-icons'; // Icon sao
-// import '../../App.css';  // Đường dẫn từ src/pages/user đến src/app.css
-
-// const OrderDetail = () => {
-//   const { id } = useParams();
-//   const [orderDetails, setOrderDetails] = useState([]); // Danh sách chi tiết sản phẩm
-//   const [totalPrice, setTotalPrice] = useState(0); // Tổng tiền
-//   const [user, setUser] = useState(null); // Thông tin người dùng
-//   const [status, setStatus] = useState(''); // Trạng thái đơn hàng
-//   const [address, setAddress] = useState(''); // Địa chỉ
-//   const [rating, setRating] = useState(0); // Số sao
-//   const [review, setReview] = useState(''); // Nội dung đánh giá
-//   const [message, setMessage] = useState(''); // Thông báo lỗi/success
-//   const [alreadyReviewed, setAlreadyReviewed] = useState(false); // Kiểm tra xem đã đánh giá chưa
-
-//   useEffect(() => {
-//     axios.get(`http://localhost:8080/api/donHangND/detail/${id}`)
-//       .then(response => {
-//         const data = response.data;
-//         console.log(data);  // Kiểm tra dữ liệu trả về từ API
-//         setOrderDetails(data.orderDetails.orderDetails); // danh sách sản phẩm
-//         setTotalPrice(data.orderDetails.totalPrice); // tổng tiền
-//         setUser(data.user); // userDTO
-//         setStatus(data.status); // status đã chuyển thành chuỗi rồi
-//         setAddress(data.address); // Địa chỉ
-        
-//         // Kiểm tra nếu người dùng đã đánh giá đơn hàng
-//         if (data.user.hasReviewed) {
-//           setAlreadyReviewed(true);
-//         }
-//       })
-//       .catch(error => {
-//         console.error('Lỗi khi lấy chi tiết đơn hàng:', error);
-//       });
-//   }, [id]);
-
-//   const userId = localStorage.getItem("userId"); // Hoặc sessionStorage nếu bạn dùng cái đó
-//   const handleReviewSubmit = () => {
-//     if (alreadyReviewed) {
-//       setMessage('Bạn đã đánh giá rồi!');
-//       return; // Dừng lại nếu đã đánh giá
-//     }
-  
-//     if (rating < 1 || rating > 5) {
-//       setMessage('Số sao phải nằm trong khoảng từ 1 đến 5');
-//       return;
-//     }
-  
-//     const reviewData = {
-//       donhangId: id,
-//       taikhoanId: Number(userId), // Chuyển đổi thành số
-//       danhgia: review,
-//       sao: rating,
-//     };
-  
-//     axios.post('http://localhost:8080/api/danhgia/submit', reviewData, {
-//       headers: {
-//         'Content-Type': 'application/json',
-//       },
-//     })
-//       .then(response => {
-//         setMessage('Đánh giá thành công!');
-//         setReview(''); // Reset nội dung đánh giá
-//         setRating(0); // Reset số sao
-  
-//         // Lưu đánh giá vào localStorage
-//         const newReview = {
-//           userName: user.fullname,
-//           danhgia: review,
-//           sao: rating,
-//         };
-  
-//         let storedReviews = JSON.parse(localStorage.getItem("reviews")) || [];
-//         storedReviews.push(newReview);
-//         localStorage.setItem("reviews", JSON.stringify(storedReviews));
-//       })
-//       .catch(error => {
-//         console.log('Review data:', reviewData);
-//         setMessage('Bạn đã đánh giá đơn hàng này!');
-//         console.error('Lỗi chi tiết:', error.response.data);  // Log chi tiết lỗi từ response
-//       });
-//   };
-  
-
-//   if (!user || orderDetails.length === 0) {
-//     return <div>Loading...</div>;
-//   }
-
-//   return (
-//     <div className="container mt-5">
-//       <h2 className="text-center">Chi Tiết Đơn Hàng</h2>
-
-//       {/* Hiển thị thông tin khách hàng */}
-//       <div className="card">
-//         <div className="card-body">
-//           <p><strong>Khách Hàng:</strong> {user.fullname || 'Thông tin không có'}</p>
-//           <p><strong>Gmail:</strong> {user.email || 'Thông tin không có'}</p>
-//           <p><strong>SĐT:</strong> {user.phoneNumber || 'Thông tin không có'}</p>
-//           <p><strong>Địa Chỉ:</strong> {address || 'Thông tin không có'}</p>
-//           <p><strong>Trạng Thái:</strong> {status || 'Không xác định'}</p>
-//           {/* Kiểm tra nếu có ngày đặt */}
-//           {user.orderDate && <p><strong>Ngày Đặt:</strong> {new Date(user.orderDate).toLocaleDateString()}</p>}
-//         </div>
-//       </div>
-
-//       <h3 className="mt-4">Sản Phẩm</h3>
-//       <table className="table table-bordered">
-//         <thead>
-//           <tr>
-//             <th>Ảnh Sản Phẩm</th>
-//             <th>Tên Sản Phẩm</th>
-//             <th>Giá</th>
-//             <th>Số Lượng</th>
-//             <th>Tổng</th>
-//           </tr>
-//         </thead>
-//         <tbody>
-//           {orderDetails.map((detail, index) => (
-//             <tr key={index}>
-//               <td>
-//                 {detail.productImage ? (
-//                   <img
-//                     src={`http://localhost:8080/uploads/${detail.productImage}`}
-//                     width="80"
-//                     height="80"
-//                     alt={detail.productName}
-//                   />
-//                 ) : (
-//                   <span>Không có ảnh</span>
-//                 )}
-//               </td>
-//               <td>{detail.productName}</td>
-//               <td>{new Intl.NumberFormat().format(detail.price)} VNĐ</td>
-//               <td>{detail.quantity}</td>
-//               <td>{new Intl.NumberFormat().format(detail.price * detail.quantity)} VNĐ</td>
-//             </tr>
-//           ))}
-//           <tr>
-//             <td colSpan="4"><strong>Tổng tiền:</strong></td>
-//             <td>{new Intl.NumberFormat().format(totalPrice)} VNĐ</td>
-//           </tr>
-//         </tbody>
-//       </table>
-
-//       {/* Phần đánh giá sản phẩm */}
-//       <div className="review-section mt-5">
-//         <h4>Đánh Giá Đơn Hàng</h4>
-//         {message && <p className="message">{message}</p>}
-//         <div className="form-group">
-//           <label htmlFor="rating">Chọn số sao:</label>
-//           <div className="rating-stars">
-//             {[1, 2, 3, 4, 5].map((star) => (
-//               <FontAwesomeIcon
-//                 key={star}
-//                 icon={faStar}
-//                 color={star <= rating ? '#ffd700' : '#ccc'}
-//                 onClick={() => setRating(star)}
-//                 style={{ cursor: 'pointer', fontSize: '24px', marginRight: '5px' }}
-//               />
-//             ))}
-//           </div>
-//         </div>
-//         <div className="form-group">
-//           <label htmlFor="review">Nội dung đánh giá:</label>
-//           <textarea
-//             id="review"
-//             className="form-control"
-//             rows="4"
-//             value={review}
-//             onChange={(e) => setReview(e.target.value)}
-//             placeholder="Viết đánh giá của bạn"
-//           />
-//         </div>
-//         <button className="btn btn-primary mt-3" onClick={handleReviewSubmit} disabled={alreadyReviewed}>Gửi Đánh Giá</button>
-//       </div>
-
-//       <a href="/donHangND" className="btn btn-secondary mt-3">Quay Lại</a>
-//     </div>
-//   );
-// };
-
-// export default OrderDetail;
-
-
-
-// import React, { useState, useEffect } from 'react';
-// import axios from 'axios';
-// import { useParams } from 'react-router-dom';
-// import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-// import { faStar } from '@fortawesome/free-solid-svg-icons'; // Icon sao
-// import '../../App.css';  // Đường dẫn từ src/pages/user đến src/app.css
-
-// const OrderDetail = () => {
-//   const { id } = useParams();
-//   const [orderDetails, setOrderDetails] = useState([]); // Danh sách chi tiết sản phẩm
-//   const [totalPrice, setTotalPrice] = useState(0); // Tổng tiền
-//   const [user, setUser] = useState(null); // Thông tin người dùng
-//   const [status, setStatus] = useState(''); // Trạng thái đơn hàng
-//   const [address, setAddress] = useState(''); // Địa chỉ
-//   const [rating, setRating] = useState(0); // Số sao
-//   const [review, setReview] = useState(''); // Nội dung đánh giá
-//   const [message, setMessage] = useState(''); // Thông báo lỗi/success
-//   const [alreadyReviewed, setAlreadyReviewed] = useState(false); // Kiểm tra xem đã đánh giá chưa
-
-//   useEffect(() => {
-//     axios.get(`http://localhost:8080/api/donHangND/detail/${id}`)
-//       .then(response => {
-//         const data = response.data;
-//         console.log(data);  // Kiểm tra dữ liệu trả về từ API
-//         setOrderDetails(data.orderDetails.orderDetails); // danh sách sản phẩm
-//         setTotalPrice(data.orderDetails.totalPrice); // tổng tiền
-//         setUser(data.user); // userDTO
-//         setStatus(data.status); // status đã chuyển thành chuỗi rồi
-//         setAddress(data.address); // Địa chỉ
-        
-//         // Kiểm tra nếu người dùng đã đánh giá đơn hàng
-//         if (data.user.hasReviewed) {
-//           setAlreadyReviewed(true);
-//         }
-//       })
-//       .catch(error => {
-//         console.error('Lỗi khi lấy chi tiết đơn hàng:', error);
-//       });
-//   }, [id]);
-
-//   const userId = localStorage.getItem("userId"); // Hoặc sessionStorage nếu bạn dùng cái đó
-  
-//   // Hàm gửi đánh giá
-//   const handleReviewSubmit = () => {
-//     if (alreadyReviewed) {
-//       setMessage('Bạn đã đánh giá rồi!');
-//       return; // Dừng lại nếu đã đánh giá
-//     }
-  
-//     if (rating < 1 || rating > 5) {
-//       setMessage('Số sao phải nằm trong khoảng từ 1 đến 5');
-//       return;
-//     }
-  
-//     const reviewData = {
-//       donhangId: id,
-//       taikhoanId: Number(userId), // Chuyển đổi thành số
-//       danhgia: review,
-//       sao: rating,
-//     };
-  
-//     axios.post('http://localhost:8080/api/danhgia/submit', reviewData, {
-//       headers: {
-//         'Content-Type': 'application/json',
-//       },
-//     })
-//       .then(response => {
-//         setMessage('Đánh giá thành công!');
-//         setReview(''); // Reset nội dung đánh giá
-//         setRating(0); // Reset số sao
-  
-//         // Lưu đánh giá vào localStorage
-//         const newReview = {
-//           userName: user.fullname,
-//           danhgia: review,
-//           sao: rating,
-//         };
-  
-//         let storedReviews = JSON.parse(localStorage.getItem("reviews")) || [];
-//         storedReviews.push(newReview);
-//         localStorage.setItem("reviews", JSON.stringify(storedReviews));
-//       })
-//       .catch(error => {
-//         console.log('Review data:', reviewData);
-//         setMessage('Có lỗi xảy ra khi gửi đánh giá!');
-//         console.error('Lỗi chi tiết:', error.response.data);  // Log chi tiết lỗi từ response
-//       });
-//   };
-
-//   // Nếu chưa có thông tin đơn hàng hoặc người dùng, hiển thị loading
-//   if (!user || orderDetails.length === 0) {
-//     return <div>Loading...</div>;
-//   }
-
-//   return (
-//     <div className="container mt-5">
-//       <h2 className="text-center">Chi Tiết Đơn Hàng</h2>
-
-//       {/* Hiển thị thông tin khách hàng */}
-//       <div className="card">
-//         <div className="card-body">
-//           <p><strong>Khách Hàng:</strong> {user.fullname || 'Thông tin không có'}</p>
-//           <p><strong>Gmail:</strong> {user.email || 'Thông tin không có'}</p>
-//           <p><strong>SĐT:</strong> {user.phoneNumber || 'Thông tin không có'}</p>
-//           <p><strong>Địa Chỉ:</strong> {address || 'Thông tin không có'}</p>
-//           <p><strong>Trạng Thái:</strong> {status || 'Không xác định'}</p>
-//           {/* Kiểm tra nếu có ngày đặt */}
-//           {user.orderDate && <p><strong>Ngày Đặt:</strong> {new Date(user.orderDate).toLocaleDateString()}</p>}
-//         </div>
-//       </div>
-
-//       <h3 className="mt-4">Sản Phẩm</h3>
-//       <table className="table table-bordered">
-//         <thead>
-//           <tr>
-//             <th>Ảnh Sản Phẩm</th>
-//             <th>Tên Sản Phẩm</th>
-//             <th>Giá</th>
-//             <th>Số Lượng</th>
-//             <th>Tổng</th>
-//           </tr>
-//         </thead>
-//         <tbody>
-//           {orderDetails.map((detail, index) => (
-//             <tr key={index}>
-//               <td>
-//                 {detail.productImage ? (
-//                   <img
-//                     src={`http://localhost:8080/uploads/${detail.productImage}`}
-//                     width="80"
-//                     height="80"
-//                     alt={detail.productName}
-//                   />
-//                 ) : (
-//                   <span>Không có ảnh</span>
-//                 )}
-//               </td>
-//               <td>{detail.productName}</td>
-//               <td>{new Intl.NumberFormat().format(detail.price)} VNĐ</td>
-//               <td>{detail.quantity}</td>
-//               <td>{new Intl.NumberFormat().format(detail.price * detail.quantity)} VNĐ</td>
-//             </tr>
-//           ))}
-//           <tr>
-//             <td colSpan="4"><strong>Tổng tiền:</strong></td>
-//             <td>{new Intl.NumberFormat().format(totalPrice)} VNĐ</td>
-//           </tr>
-//         </tbody>
-//       </table>
-
-//       {/* Phần đánh giá sản phẩm */}
-//       <div className="review-section mt-5">
-//         <h4>Đánh Giá Đơn Hàng</h4>
-//         {message && <p className="message">{message}</p>}
-//         <div className="form-group">
-//           <label htmlFor="rating">Chọn số sao:</label>
-//           <div className="rating-stars">
-//             {[1, 2, 3, 4, 5].map((star) => (
-//               <FontAwesomeIcon
-//                 key={star}
-//                 icon={faStar}
-//                 color={star <= rating ? '#ffd700' : '#ccc'}
-//                 onClick={() => setRating(star)}
-//                 style={{ cursor: 'pointer', fontSize: '24px', marginRight: '5px' }}
-//               />
-//             ))}
-//           </div>
-//         </div>
-//         <div className="form-group">
-//           <label htmlFor="review">Nội dung đánh giá:</label>
-//           <textarea
-//             id="review"
-//             className="form-control"
-//             rows="4"
-//             value={review}
-//             onChange={(e) => setReview(e.target.value)}
-//             placeholder="Viết đánh giá của bạn"
-//           />
-//         </div>
-//         <button className="btn btn-primary mt-3" onClick={handleReviewSubmit} disabled={alreadyReviewed}>Gửi Đánh Giá</button>
-//       </div>
-
-//       <a href="/donHangND" className="btn btn-secondary mt-3">Quay Lại</a>
-//     </div>
-//   );
-// };
-
-// export default OrderDetail;
-
-
-
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useParams } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStar } from '@fortawesome/free-solid-svg-icons';
-import '../../App.css';
+// src/pages/user/OrderDetail.jsx
+"use client"
+
+import React, { useState, useEffect } from 'react'
+import axios from 'axios'
+import { useParams, useNavigate } from 'react-router-dom'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faStar } from '@fortawesome/free-solid-svg-icons'
 
 const OrderDetail = () => {
-  const { id } = useParams();
-  const [orderDetails, setOrderDetails] = useState([]);
-  const [totalPrice, setTotalPrice] = useState(0);
-  const [user, setUser] = useState(null);
-  const [status, setStatus] = useState('');
-  const [address, setAddress] = useState('');
-  const [productReviews, setProductReviews] = useState([]);
-  const [message, setMessage] = useState('');
-  const [orderDate, setOrderDate] = useState(null);
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const [orderDetails, setOrderDetails] = useState([])
+  const [totalPrice, setTotalPrice] = useState(0)
+  const [user, setUser] = useState(null)
+  const [status, setStatus] = useState('')
+  const [address, setAddress] = useState('')
+  const [orderDate, setOrderDate] = useState(null)
+  const [productReviews, setProductReviews] = useState([])
+  const [message, setMessage] = useState('')
 
-  const userId = localStorage.getItem("userId");
+  const userId = localStorage.getItem("userId")
 
   useEffect(() => {
     axios.get(`http://localhost:8080/api/donHangND/detail/${id}`)
-      .then(response => {
-        const data = response.data;
-        setOrderDetails(data.orderDetails.orderDetails);
-        setTotalPrice(data.orderDetails.totalPrice);
-        setOrderDate(data.orderDetails.orderDate);
-        setUser(data.user);
-        setStatus(data.status);
-        setAddress(data.address);
+      .then(res => {
+        const data = res.data
+        const details = data.orderDetails?.orderDetails || []
 
-        const initialReviews = data.orderDetails.orderDetails.map(item => ({
+        setOrderDetails(details)
+        setTotalPrice(data.orderDetails?.totalPrice || 0)
+        setOrderDate(data.orderDetails?.orderDate)
+        setUser(data.user)
+        setStatus(data.status) // <-- Đây là trạng thái bạn nhận từ backend
+        setAddress(data.address)
+
+        const initialReviews = details.map(item => ({
           productId: item.productId,
           rating: 0,
           review: '',
           submitted: false,
-        }));
-        setProductReviews(initialReviews);
+        }))
+        setProductReviews(initialReviews)
       })
-      .catch(error => {
-        console.error('Lỗi khi lấy chi tiết đơn hàng:', error);
-      });
-  }, [id]);
+      .catch(err => {
+        console.error("Lỗi tải chi tiết đơn:", err)
+        setMessage("Không thể tải chi tiết đơn hàng")
+      })
+  }, [id])
 
-  const handleRatingChange = (index, rating) => {
-    const updated = [...productReviews];
-    updated[index].rating = rating;
-    setProductReviews(updated);
-  };
-  
-  const handleReviewChange = (index, value) => {
-    const updated = [...productReviews];
-    updated[index].review = value;
-    setProductReviews(updated);
-  };
-  
-  const handleSubmitReview = (index) => {
-    const { productId, rating, review } = productReviews[index];
-  
-    // Kiểm tra xem productId có hợp lệ không
-    if (!productId) {
-      setMessage('Sản phẩm không hợp lệ');
-      console.error('Product ID is invalid:', productId); // Log giá trị của productId
-      return;
-    }
-  
-    // Kiểm tra rating hợp lệ (từ 1 đến 5)
-    if (rating < 1 || rating > 5) {
-      setMessage('Số sao phải từ 1 đến 5');
-      return;
-    }
-  
-    // Kiểm tra xem review có được nhập hay không
-    if (!review || review.trim() === '') {
-      setMessage('Vui lòng nhập đánh giá');
-      return;
-    }
-  
-    // Đảm bảo các ID không bị null hoặc undefined
-   const reviewData = {
-  donHangId: Number(id),
-  taiKhoanId: Number(userId),
-  sanPhamId: productId,
-  sao: rating,
-  danhgia: review
-};
+  const handleRating = (index, rating) => {
+    const updated = [...productReviews]
+    updated[index].rating = rating
+    setProductReviews(updated)
+  }
 
-  
-    // In ra để debug
-    console.log('Review data:', reviewData);
-  
-    // Gửi yêu cầu đánh giá
-    axios.post('http://localhost:8080/api/danhgia/submit', reviewData)
+  const handleReview = (index, value) => {
+    const updated = [...productReviews]
+    updated[index].review = value
+    setProductReviews(updated)
+  }
+
+  const submitReview = (index) => {
+    const review = productReviews[index]
+    if (!review.productId || review.rating === 0 || !review.review.trim()) {
+      setMessage("Vui lòng chọn sao và nhập đánh giá")
+      return
+    }
+
+    const payload = {
+      donHangId: Number(id),
+      taiKhoanId: Number(userId),
+      sanPhamId: review.productId,
+      sao: review.rating,
+      danhgia: review.review.trim()
+    }
+
+    axios.post('http://localhost:8080/api/danhgia/submit', payload)
       .then(() => {
-        const updated = [...productReviews];
-        updated[index].submitted = true;  // Đánh dấu đã gửi thành công
-        setProductReviews(updated);
-        setMessage('Đánh giá thành công!');
+        const updated = [...productReviews]
+        updated[index].submitted = true
+        setProductReviews(updated)
+        setMessage("Đánh giá thành công!")
+        setTimeout(() => setMessage(''), 3000)
       })
-      .catch(error => {
-        setMessage('bạn đã đánh giá sản phẩm này rồi!');
-        console.error(error.response?.data || error);
-      });
-  };
-  
+      .catch(() => {
+        setMessage("Bạn đã đánh giá sản phẩm này rồi!")
+        setTimeout(() => setMessage(''), 4000)
+      })
+  }
 
-  if (!user || orderDetails.length === 0) return <div>Loading...</div>;
+  // Hover giống các trang khác
+  useEffect(() => {
+    const style = document.createElement("style")
+    style.textContent = `
+      html, body, #root { margin:0; padding:0; width:100%; background:#f5f1ed; overflow-x:hidden; }
+      .product-card:hover { transform: translateY(-16px); box-shadow: 0 25px 50px rgba(0,0,0,0.15); }
+      .product-card:hover img { transform: scale(1.1); }
+    `
+    document.head.appendChild(style)
+    return () => document.head.removeChild(style)
+  }, [])
+
+  const formatDate = (dateStr) => {
+    return new Date(dateStr).toLocaleDateString("vi-VN", {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    })
+  }
+
+  // CHỈ CHO PHÉP ĐÁNH GIÁ KHI ĐƠN HÀNG "ĐÃ THANH TOÁN"
+  const isPaid = status === "Đã thanh toán"
+
+  if (!user || orderDetails.length === 0) {
+    return <div style={{ textAlign:"center", padding:"150px 0", fontSize:"28px", color:"#888" }}>Đang tải...</div>
+  }
 
   return (
-    <div className="container mt-5">
-      <h2 className="text-center">Chi Tiết Đơn Hàng</h2>
-
-      <div className="card">
-        <div className="card-body">
-          <p><strong>Khách Hàng:</strong> {user.fullname}</p>
-          <p><strong>Gmail:</strong> {user.email}</p>
-          <p><strong>SĐT:</strong> {user.phoneNumber}</p>
-          <p><strong>Địa Chỉ:</strong> {address}</p>
-          <p><strong>Trạng Thái:</strong> {status}</p>
-          {orderDate && (
-            <p><strong>Ngày Đặt:</strong> {new Date(orderDate).toLocaleDateString()}</p>
-          )}
-        </div>
+    <div style={{ background:"#f5f1ed", minHeight:"100vh", paddingBottom:"120px" }}>
+      {/* Header */}
+      <div style={{ padding:"10px 40px 60px", textAlign:"center" }}>
+        <h1 style={{ fontFamily:"'Georgia', serif", fontSize:"52px", fontWeight:300, color:"#2d2d2d", margin:"0 0 20px 0" }}>
+          Chi Tiết Đơn Hàng #{id}
+        </h1>
+        <div style={{ height:"5px", width:"90px", backgroundColor:"#d4a574", margin:"0 auto" }}></div>
       </div>
 
-      <h3 className="mt-4">Sản Phẩm</h3>
-      <table className="table table-bordered">
-        <thead>
-          <tr>
-            <th>Ảnh</th>
-            <th>Tên</th>
-            <th>Giá</th>
-            <th>Số Lượng</th>
-            <th>Tổng</th>
-            <th>Đánh Giá</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orderDetails.map((detail, index) => (
-            <tr key={index}>
-              <td>
-                {detail.productImage ? (
-                  <img src={`http://localhost:8080/uploads/${detail.productImage}`} alt={detail.productName} width="80" height="80" />
-                ) : 'Không có ảnh'}
-              </td>
-              <td>{detail.productName}</td>
-              <td>{detail.price.toLocaleString()} VNĐ</td>
-              <td>{detail.quantity}</td>
-              <td>{(detail.price * detail.quantity).toLocaleString()} VNĐ</td>
-              <td>
-                {productReviews[index]?.submitted ? (
-                  <span className="text-success">Đã đánh giá</span>
-                ) : (
-                  <div>
-                    <div className="mb-1">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <FontAwesomeIcon
-                          key={star}
-                          icon={faStar}
-                          color={star <= productReviews[index].rating ? '#ffd700' : '#ccc'}
-                          onClick={() => handleRatingChange(index, star)}
-                          style={{ cursor: 'pointer', fontSize: '20px' }}
-                        />
-                      ))}
+      <div style={{ maxWidth:"1400px", margin:"0 auto", padding:"0 40px" }}>
+        {/* Thông tin đơn hàng */}
+        <div style={{
+          background:"#fff",
+          borderRadius:"20px",
+          padding:"36px 40px",
+          marginBottom:"40px",
+          boxShadow:"0 10px 30px rgba(0,0,0,0.08)"
+        }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(300px,1fr))", gap:"20px", fontSize:"17px" }}>
+            <div><strong>Khách hàng:</strong> {user.fullname}</div>
+            <div><strong>Email:</strong> {user.email}</div>
+            <div><strong>SĐT:</strong> {user.phoneNumber}</div>
+            <div><strong>Địa chỉ:</strong> {address}</div>
+            <div><strong>Ngày đặt:</strong> {formatDate(orderDate)}</div>
+            <div>
+              <strong>Trạng thái:</strong>{" "}
+              <span style={{
+                padding:"8px 20px",
+                borderRadius:"50px",
+                backgroundColor: status === "Đã thanh toán" ? "#27ae60" : status === "Đã hủy" ? "#e74c3c" : "#f39c12",
+                color:"white",
+                fontWeight:600,
+                fontSize:"15px",
+                display:"inline-block"
+              }}>
+                {status}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Danh sách sản phẩm */}
+        <div style={{ display:"grid", gap:"32px" }}>
+          {orderDetails.map((item, idx) => {
+            const review = productReviews[idx] || {}
+
+            return (
+              <div key={idx} className="product-card" style={{
+                background:"#fff",
+                borderRadius:"20px",
+                overflow:"hidden",
+                boxShadow:"0 10px 30px rgba(0,0,0,0.08)",
+                transition:"all 0.4s ease",
+                display:"flex",
+                gap:"30px",
+                padding:"32px",
+                alignItems:"center"
+              }}>
+                <img
+                  src={`http://localhost:8080/uploads/${item.productImage || item.hinhAnh}`}
+                  alt={item.productName || item.tenSanPham}
+                  style={{
+                    width:"180px",
+                    height:"180px",
+                    objectFit:"cover",
+                    borderRadius:"16px",
+                    transition:"transform 0.6s ease-out"
+                  }}
+                  onError={e => e.target.src = "https://via.placeholder.com/180/f5f1ed/999?text=No+Image"}
+                />
+
+                <div style={{ flex:1 }}>
+                  <h3 style={{ fontFamily:"'Georgia', serif", fontSize:"26px", fontWeight:300, color:"#2d2d2d", margin:"0 0 12px 0" }}>
+                    {item.productName || item.tenSanPham}
+                  </h3>
+                  <p style={{ fontSize:"18px", color:"#555", margin:"8px 0" }}>
+                    Giá: {Number(item.price || item.gia).toLocaleString("vi-VN")} đ
+                  </p>
+                  <p style={{ fontSize:"18px", color:"#555" }}>
+                    Số lượng: {item.quantity || item.soLuong}
+                  </p>
+                  <p style={{ fontSize:"22px", fontWeight:600, color:"#d4a574", marginTop:"16px" }}>
+                    Thành tiền: {(Number(item.price || item.gia) * Number(item.quantity || item.soLuong)).toLocaleString("vi-VN")} đ
+                  </p>
+
+                  {/* CHỈ HIỆN ĐÁNH GIÁ KHI ĐÃ THANH TOÁN */}
+                  {isPaid && (
+                    <div style={{ marginTop:"24px" }}>
+                      {review.submitted ? (
+                        <div style={{ color:"#27ae60", fontWeight:600, fontSize:"17px" }}>
+                          Đã đánh giá sản phẩm này
+                        </div>
+                      ) : (
+                        <div>
+                          <p style={{ margin:"0 0 12px 0", fontWeight:600, color:"#2d2d2d" }}>
+                            Đánh giá sản phẩm:
+                          </p>
+                          <div style={{ marginBottom:"12px" }}>
+                            {[1,2,3,4,5].map(star => (
+                              <FontAwesomeIcon
+                                key={star}
+                                icon={faStar}
+                                style={{ fontSize:"26px", cursor:"pointer", marginRight:"8px" }}
+                                color={star <= review.rating ? "#ffd700" : "#e0e0e0"}
+                                onClick={() => handleRating(idx, star)}
+                              />
+                            ))}
+                          </div>
+                          <textarea
+                            rows={3}
+                            placeholder="Viết đánh giá của bạn..."
+                            value={review.review || ""}
+                            onChange={e => handleReview(idx, e.target.value)}
+                            style={{
+                              width:"100%",
+                              padding:"14px",
+                              borderRadius:"12px",
+                              border:"2px solid #eee",
+                              fontSize:"16px",
+                              marginBottom:"14px"
+                            }}
+                          />
+                          <button
+                            onClick={() => submitReview(idx)}
+                            style={{
+                              padding:"12px 36px",
+                              background:"#d4a574",
+                              color:"white",
+                              border:"none",
+                              borderRadius:"50px",
+                              fontWeight:600,
+                              cursor:"pointer",
+                              fontSize:"14px"
+                            }}
+                          >
+                            Gửi đánh giá
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <textarea
-                      rows="2"
-                      className="form-control mb-2"
-                      placeholder="Nội dung đánh giá..."
-                      value={productReviews[index].review}
-                      onChange={(e) => handleReviewChange(index, e.target.value)}
-                    />
-                    <button
-                      className="btn btn-sm btn-primary"
-                      onClick={() => handleSubmitReview(index)}
-                    >
-                      Gửi
-                    </button>
-                  </div>
-                )}
-              </td>
-            </tr>
-          ))}
-          <tr>
-            <td colSpan="4"><strong>Tổng tiền:</strong></td>
-            <td colSpan="2">{totalPrice.toLocaleString()} VNĐ</td>
-          </tr>
-        </tbody>
-      </table>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
 
-      {message && <div className="alert alert-info mt-3">{message}</div>}
-      <a href="/donHangND" className="btn btn-secondary mt-3">Quay Lại</a>
+        {/* Tổng tiền */}
+        <div style={{
+          textAlign:"right",
+          fontSize:"32px",
+          fontWeight:600,
+          color:"#d4a574",
+          margin:"60px 0 40px"
+        }}>
+          Tổng cộng: {Number(totalPrice).toLocaleString("vi-VN")} đ
+        </div>
+
+        {/* Nút quay lại */}
+        <div style={{ textAlign:"center", marginBottom:"60px" }}>
+          <button
+            onClick={() => navigate(-1)}
+            style={{
+              padding:"18px 80px",
+              background:"#d4a574",
+              color:"white",
+              border:"none",
+              borderRadius:"50px",
+              fontSize:"18px",
+              fontWeight:600,
+              cursor:"pointer",
+              boxShadow:"0 12px 30px rgba(212,165,116,0.4)"
+            }}
+            onMouseOver={e => e.currentTarget.style.background = "#c49a6c"}
+            onMouseOut={e => e.currentTarget.style.background = "#d4a574"}
+          >
+            Quay lại
+          </button>
+        </div>
+
+        {/* Thông báo */}
+        {message && (
+          <div style={{
+            position:"fixed",
+            bottom:"30px",
+            left:"50%",
+            transform:"translateX(-50%)",
+            background:message.includes("thành công") ? "#27ae60" : "#e74c3c",
+            color:"white",
+            padding:"16px 40px",
+            borderRadius:"50px",
+            fontWeight:600,
+            zIndex:9999,
+            boxShadow:"0 10px 30px rgba(0,0,0,0.2)"
+          }}>
+            {message}
+          </div>
+        )}
+      </div>
     </div>
-  );
-};
+  )
+}
 
-export default OrderDetail;
+export default OrderDetail

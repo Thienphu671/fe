@@ -1,191 +1,230 @@
-import React, { useEffect, useState } from "react";
-import { getFavorites, removeFavorite as removeFavoriteAPI } from "../../api/yeuthich";
-import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHeart } from "@fortawesome/free-solid-svg-icons";
+// src/pages/user/Favorites.jsx
+"use client"
+
+import React, { useEffect, useState } from "react"
+import { getFavorites, removeFavorite } from "../../api/yeuthich"
+import { useNavigate } from "react-router-dom"
+import { toast } from "react-toastify"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faHeart } from "@fortawesome/free-solid-svg-icons"
 
 const Favorites = () => {
-  const [favorites, setFavorites] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [removingId, setRemovingId] = useState(null);
-  const navigate = useNavigate();
-
-  const fetchFavorites = async () => {
-    try {
-      const response = await getFavorites();
-      setFavorites(response.data || []);
-    } catch (error) {
-      console.error("Lỗi khi lấy danh sách yêu thích:", error);
-      toast.error("Không thể tải danh sách yêu thích!", { autoClose: 5000 });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRemoveFavorite = async (productId, productName = "sản phẩm") => {
-   
-   
-
-    setRemovingId(productId);
-
-    try {
-      await removeFavoriteAPI(productId);
-      setFavorites(favorites.filter((fav) => fav.product.id !== productId));
-      
-      // Thông báo success giống hệt ProductDetailForm
-      toast.success(`Đã xóa "${productName}" khỏi danh sách yêu thích!`, {
-        icon: <FontAwesomeIcon icon={faHeart} style={{ color: "#ff6b9d" }} />,
-        autoClose: 3000,
-      });
-    } catch (error) {
-      console.error("Lỗi khi xóa:", error);
-      
-      // Thông báo error giống kiểu chung
-      toast.error("Xóa thất bại! Vui lòng thử lại.", { autoClose: 5000 });
-    } finally {
-      setRemovingId(null);
-    }
-  };
+  const [favorites, setFavorites] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [removingId, setRemovingId] = useState(null)
+  const navigate = useNavigate()
 
   useEffect(() => {
-    fetchFavorites();
-  }, []);
+    const fetchFavorites = async () => {
+      try {
+        const res = await getFavorites()
+        const list = res.data || res || []
+        setFavorites(list.filter(f => f.product))
+      } catch (err) {
+        toast.error("Không thể tải danh sách yêu thích")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchFavorites()
+  }, [])
 
-  // CSS động giống trang chi tiết sản phẩm
-  useEffect(() => {
-    const style = document.createElement("style");
-    style.textContent = `
-      .favorites-root { background:#f5f1ed; min-height:100vh; padding-bottom:120px; }
-      .favorites-container { max-width:1600px; margin:0 auto; padding:0 5%; }
-      .favorites-title { font-family:'Georgia', serif; font-size:52px; font-weight:300; color:#2d2d2d; text-align:center; margin:100px 0 80px; }
-      .favorite-card { 
-        border-radius:24px; overflow:hidden; background:#fff; 
-        box-shadow:0 10px 30px rgba(0,0,0,0.08); transition:all 0.5s ease;
-      }
-      .favorite-card:hover { transform:translateY(-12px); box-shadow:0 20px 50px rgba(0,0,0,0.15); }
-      .favorite-img { height:320px; object-fit:cover; transition:transform 0.8s ease; }
-      .favorite-card:hover .favorite-img { transform:scale(1.08); }
-      .btn-view-detail {
-        padding:16px 40px; background:#000; color:#fff; border:none; border-radius:50px;
-        font-weight:600; letter-spacing:1.5px; transition:all 0.4s ease;
-      }
-      .btn-view-detail:hover { background:#111; transform:translateY(-4px); box-shadow:0 12px 30px rgba(0,0,0,0.2); }
-      .btn-remove-fav {
-        padding:16px 40px; background:linear-gradient(135deg,#ff6b9d,#ff8fb3); color:#fff; border:none; border-radius:50px;
-        font-weight:600; letter-spacing:1.5px; transition:all 0.4s ease;
-      }
-      .btn-remove-fav:hover { background:linear-gradient(135deg,#ff4f8a,#ff6b9d); transform:translateY(-4px); box-shadow:0 12px 30px rgba(255,107,157,0.4); }
-      .empty-state { background:rgba(255,255,255,0.6); border-radius:24px; padding:100px 40px; text-align:center; }
-      .btn-continue-shopping {
-        padding:18px 60px; background:#d4a574; color:#fff; border:none; border-radius:50px;
-        font-size:18px; font-weight:600; letter-spacing:2px; margin-top:40px;
-        transition:all 0.4s ease;
-      }
-      .btn-continue-shopping:hover { background:#c49a6c; transform:translateY(-6px); box-shadow:0 16px 40px rgba(212,165,116,0.4); }
-    `;
-    document.head.appendChild(style);
-    return () => document.head.removeChild(style);
-  }, []);
-
-  if (loading) {
-    return (
-      <div style={{ background: "#f5f1ed", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
-        <div style={{ fontSize: "32px", color: "#888", marginBottom: "20px" }}>Đang tải danh sách yêu thích...</div>
-        <div className="spinner-border text-primary" style={{ width: "4rem", height: "4rem" }} role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
-      </div>
-    );
+  const handleRemove = async (e, productId, productName) => {
+    e.stopPropagation()
+    setRemovingId(productId)
+    try {
+      await removeFavorite(productId)
+      setFavorites(prev => prev.filter(f => f.product.id !== productId))
+      toast.success(`Đã xóa "${productName}" khỏi yêu thích!`)
+    } catch {
+      toast.error("Có lỗi xảy ra!")
+    } finally {
+      setRemovingId(null)
+    }
   }
 
+  // Hover giống hệt trang sản phẩm
+  useEffect(() => {
+    const style = document.createElement("style")
+    style.textContent = `
+      html, body, #root { margin:0; padding:0; width:100%; background:#f5f1ed; overflow-x:hidden; }
+      .fav-card:hover { transform: translateY(-16px); box-shadow: 0 25px 50px rgba(0,0,0,0.15); }
+      .fav-card:hover .fav-image { transform: scale(1.1); }
+      .fav-card:hover .fav-overlay { background: rgba(0,0,0,0.55); }
+      .fav-card:hover .detail-btn { opacity: 1; }
+      .remove-btn:hover { background:#e74c3c !important; color:white !important; border-color:#e74c3c !important; }
+    `
+    document.head.appendChild(style)
+    return () => document.head.removeChild(style)
+  }, [])
+
+  const styles = {
+    root: { background: "#f5f1ed", minHeight: "100vh" },
+    header: { padding: "10px 20px 80px", textAlign: "center" },
+    title: { fontFamily: "'Georgia', serif", fontSize: "52px", fontWeight: 300, color: "#2d2d2d", margin: "0 0 20px 0" },
+    underline: { height: "5px", width: "90px", backgroundColor: "#d4a574", margin: "0 auto 60px" },
+
+    grid: {
+      display: "grid",
+      gridTemplateColumns: "repeat(4, 1fr)",
+      gap: "40px",
+      padding: "0 40px 120px",
+      maxWidth: "100%",
+      margin: "0 auto"
+    },
+
+    card: { background: "#fff", borderRadius: "20px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.08)", transition: "all 0.4s ease", cursor: "pointer" },
+    imgBox: { position: "relative", overflow: "hidden", aspectRatio: "1" },
+    img: { width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.6s ease-out" },
+    overlay: { position: "absolute", inset: 0, background: "rgba(0,0,0,0)", display: "flex", alignItems: "center", justifyContent: "center", transition: "0.4s" },
+    detailBtn: { opacity: 0, padding: "14px 36px", background: "#fff", color: "#2d2d2d", border: "none", borderRadius: "8px", fontWeight: 600, fontSize: "15px", cursor: "pointer", transition: "0.4s" },
+
+    info: { padding: "32px 24px", textAlign: "center" },
+    name: { fontFamily: "'Georgia', serif", fontSize: "22px", fontWeight: 300, color: "#2d2d2d", marginBottom: "12px" },
+    price: { fontSize: "24px", fontWeight: 600, color: "#d4a574", marginBottom: "30px" },
+    actions: { display: "flex", justifyContent: "center" },
+
+    // Nút giống hệt nút "Yêu Thích" trong trang sản phẩm
+    actionBtn: {
+      padding: "16px 40px",
+      background: "transparent",
+      border: "2px solid #2d2d2d",
+      color: "#2d2d2d",
+      borderRadius: "12px",
+      fontWeight: 600,
+      fontSize: "15px",
+      minWidth: "220px",
+      transition: "all 0.3s",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: "10px"
+    },
+
+    empty: { textAlign: "center", padding: "120px 20px", color: "#888", fontSize: "28px" },
+    emptyBtn: {
+      marginTop: "40px",
+      padding: "18px 60px",
+      background: "#d4a574",
+      color: "#fff",
+      border: "none",
+      borderRadius: "50px",
+      fontSize: "18px",
+      fontWeight: 600,
+      cursor: "pointer",
+      transition: "all 0.4s"
+    }
+  }
+
+  const gridStyle = {
+    ...styles.grid,
+    gridTemplateColumns:
+      typeof window !== "undefined" && window.innerWidth < 1400
+        ? window.innerWidth < 900 ? "repeat(2, 1fr)" : "repeat(3, 1fr)"
+        : "repeat(4, 1fr)",
+    padding: typeof window !== "undefined" && window.innerWidth < 768 ? "0 20px 100px" : "0 40px 120px"
+  }
+
+  if (loading) return <div style={{ textAlign: "center", padding: "150px 0", fontSize: "28px", color: "#888" }}>
+    Đang tải danh sách yêu thích...
+  </div>
+
   return (
-    <div className="favorites-root">
-      <div className="favorites-container">
-        <h1 className="favorites-title">Sản Phẩm Yêu Thích</h1>
+    <div style={styles.root}>
+      <div style={styles.header}>
+        <h1 style={styles.title}>Sản Phẩm Yêu Thích Của Bạn</h1>
+        <div style={styles.underline}></div>
+      </div>
 
-        {favorites.length === 0 ? (
-          <div className="empty-state">
-            <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="1.5" style={{ margin: "0 auto 30px" }}>
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-            </svg>
-            <p style={{ fontSize: "26px", color: "#888", marginBottom: "20px" }}>
-              Bạn chưa có sản phẩm yêu thích nào.
-            </p>
-            <p style={{ fontSize: "18px", color: "#aaa", marginBottom: "40px" }}>
-              Hãy khám phá và thêm những món đồ bạn yêu thích ngay hôm nay!
-            </p>
-            <button className="btn-continue-shopping" onClick={() => navigate("/sanPham")}>
-              Khám Phá Ngay
-            </button>
-          </div>
-        ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(380px, 1fr))", gap: "60px" }}>
-            {favorites.map((favorite) => {
-              const product = favorite.product;
-              const imageUrl = product?.hinh
-                ? `http://localhost:8080/uploads/${product.hinh}`
-                : "https://via.placeholder.com/800";
+      {favorites.length === 0 ? (
+        <div style={styles.empty}>
+          <p>Chưa có sản phẩm nào trong danh sách yêu thích</p>
+          <button
+            style={styles.emptyBtn}
+            onClick={() => navigate("/sanPham")}
+            onMouseOver={e => e.currentTarget.style.background = "#c49a6c"}
+            onMouseOut={e => e.currentTarget.style.background = "#d4a574"}
+          >
+            Khám Phá Sản Phẩm
+          </button>
+        </div>
+      ) : (
+        <div style={gridStyle}>
+          {favorites.map(({ product }) => {
+            const isRemoving = removingId === product.id
 
-              return (
-                <div key={favorite.id} className="favorite-card">
+            return (
+              <div
+                key={product.id}
+                className="fav-card"
+                style={styles.card}
+                onClick={() => navigate(`/product/${product.id}`)}
+              >
+                <div style={styles.imgBox}>
+                  {/* ẢNH HIỆN ĐÚNG 100% */}
                   <img
-                    src={imageUrl}
-                    alt={product?.ten || "Sản phẩm"}
-                    className="favorite-img"
-                    style={{ width: "100%", display: "block" }}
-                    onError={(e) => (e.target.src = "https://via.placeholder.com/800?text=Ảnh+lỗi")}
+                    src={`http://localhost:8080/uploads/${product.hinh}`}
+                    alt={product.ten}
+                    style={styles.img}
+                    className="fav-image"
+                    onError={(e) => {
+                      e.target.onerror = null
+                      e.target.src = "https://via.placeholder.com/400x400/f5f1ed/999?text=No+Image"
+                    }}
                   />
-
-                  <div style={{ padding: "36px" }}>
-                    <h3 style={{ fontFamily: "'Georgia', serif", fontSize: "32px", fontWeight: 300, color: "#2d2d2d", margin: "0 0 16px 0" }}>
-                      {product?.ten || "Không có tên"}
-                    </h3>
-
-                    <div style={{ marginBottom: "24px", color: "#555", fontSize: "17px", lineHeight: "1.8" }}>
-                      <p><strong>Kích thước:</strong> {product?.kichthuoc || "Free size"}</p>
-                      <p><strong>Giá:</strong> <span style={{ fontSize: "28px", color: "#d4a574", fontWeight: 600 }}>
-                        {product?.gia?.toLocaleString("vi-VN") || "0"} đ
-                      </span></p>
-                      <p style={{ fontSize: "15px", color: "#999" }}>
-                        Thêm vào: {favorite.likedDate ? new Date(favorite.likedDate).toLocaleDateString("vi-VN") : "N/A"}
-                      </p>
-                    </div>
-
-                    <div style={{ display: "flex", gap: "20px", marginTop: "32px" }}>
-                      <button
-                        className="btn-remove-fav"
-                        onClick={() => handleRemoveFavorite(product.id, product?.ten || "sản phẩm")}
-                        disabled={removingId === product.id}
-                        style={{ opacity: removingId === product.id ? 0.7 : 1 }}
-                      >
-                        {removingId === product.id ? "Đang xóa..." : "Xóa khỏi Yêu Thích"}
-                      </button>
-
-                      <button
-                        className="btn-view-detail"
-                        onClick={() => navigate(`/product/${product.id}`)}
-                      >
-                        Xem Chi Tiết
-                      </button>
-                    </div>
+                  <div style={styles.overlay} className="fav-overlay">
+                    <button
+                      style={styles.detailBtn}
+                      className="detail-btn"
+                      onClick={(e) => { e.stopPropagation(); navigate(`/product/${product.id}`) }}
+                    >
+                      Xem Chi Tiết
+                    </button>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
 
-        {favorites.length > 0 && (
-          <div style={{ textAlign: "center", marginTop: "100px" }}>
-            <button className="btn-continue-shopping" onClick={() => navigate("/sanPham")}>
-              ← Tiếp Tục Mua Sắm
-            </button>
-          </div>
-        )}
-      </div>
+                <div style={styles.info}>
+                  <h3 style={styles.name}>{product.ten}</h3>
+                  <p style={styles.price}>{Number(product.gia).toLocaleString("vi-VN")} đ</p>
+
+                  <div style={styles.actions}>
+                    <button
+                      style={{
+                        ...styles.actionBtn,
+                        background: "#e74c3c",
+                        color: "white",
+                        borderColor: "#e74c3c",
+                        opacity: isRemoving ? 0.7 : 1
+                      }}
+                      className="remove-btn"
+                      onClick={(e) => handleRemove(e, product.id, product.ten)}
+                      disabled={isRemoving}
+                    >
+                      <FontAwesomeIcon icon={faHeart} />
+                      {isRemoving ? " Đang xóa..." : " Xóa khỏi yêu thích"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {favorites.length > 0 && (
+        <div style={{ textAlign: "center", margin: "80px 0 120px" }}>
+          <button
+            style={styles.emptyBtn}
+            onClick={() => navigate("/sanPham")}
+            onMouseOver={e => e.currentTarget.style.background = "#c49a6c"}
+            onMouseOut={e => e.currentTarget.style.background = "#d4a574"}
+          >
+            ← Tiếp Tục Mua Sắm
+          </button>
+        </div>
+      )}
     </div>
-  );
-};
+  )
+}
 
-export default Favorites;
+export default Favorites

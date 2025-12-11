@@ -7,7 +7,7 @@ const SanPhamList = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [keyword, setKeyword] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all"); // Trạng thái lọc
+  const [filterStatus, setFilterStatus] = useState("all");
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -16,21 +16,27 @@ const SanPhamList = () => {
   const fetchData = async (searchKeyword = "") => {
     try {
       const res = await fetchProducts(searchKeyword);
-      console.log("Dữ liệu sản phẩm đã lấy:", res.data.products);
-
-      const updatedProducts = res.data.products.map((product) => {
+      const productsFromServer = res.data.products;
+  
+      const updateStatusPromises = productsFromServer.map((product) => {
         if (product.soluong === 0 && product.status !== 1) {
-          toggleProductStatus(product.id, 1); // Tự động cập nhật trạng thái "Hết hàng"
+          return toggleProductStatus(product.id, 1); // Hết hàng
+        } else if (product.soluong > 0 && product.status === 1) {
+          return toggleProductStatus(product.id, 0); // Tự trở lại Còn hàng nếu có hàng lại
         }
-        return product;
-      });
-
-      setProducts(updatedProducts || []);
-      setCurrentPage(1); // Reset về trang đầu khi tìm kiếm
+        return null;
+      }).filter(Boolean);
+  
+      await Promise.all(updateStatusPromises);
+      const updatedRes = await fetchProducts(searchKeyword);
+      setProducts(updatedRes.data.products || []);
+      setCurrentPage(1);
     } catch (err) {
       console.error("Lỗi khi load sản phẩm:", err);
     }
   };
+  
+  
 
   const fetchCategoriesData = async () => {
     try {
@@ -53,14 +59,25 @@ const SanPhamList = () => {
   const toggleStatus = async (id, currentStatus) => {
     if (window.confirm("Bạn có chắc muốn thay đổi trạng thái sản phẩm này?")) {
       try {
-        const newStatus = currentStatus === 0 ? 2 : (currentStatus === 2 ? 0 : currentStatus);
+        let newStatus;
+        if (currentStatus === 0) {
+          newStatus = 2; // Đổi từ Còn hàng -> Ngừng bán
+        } else if (currentStatus === 2) {
+          newStatus = 0; // Đổi từ Ngừng bán -> Còn hàng
+        } else {
+          // Nếu đang ở trạng thái Hết hàng (1), không cho đổi bằng tay
+          alert("Sản phẩm đang ở trạng thái Hết hàng (tự động). Vui lòng cập nhật lại số lượng để thay đổi trạng thái.");
+          return;
+        }
+  
         await toggleProductStatus(id, newStatus);
-        fetchData(); // Làm mới danh sách
-      } catch (err) {
-        console.error("Lỗi thay đổi trạng thái:", err);
+        fetchData(); // Cập nhật lại danh sách sản phẩm
+      } catch (error) {
+        console.error("Lỗi khi thay đổi trạng thái sản phẩm:", error);
       }
     }
   };
+  
 
   const formatDate = (dateString) => {
     return dateString ? dayjs(dateString).format("DD/MM/YYYY HH:mm") : "";
@@ -71,13 +88,11 @@ const SanPhamList = () => {
     fetchCategoriesData();
   }, []);
 
-  // Lọc sản phẩm theo trạng thái
   const filteredProducts = products.filter((product) => {
     if (filterStatus === "all") return true;
-    return product.status === Number(filterStatus); // Lọc theo trạng thái
+    return product.status === Number(filterStatus);
   });
 
-  // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentProducts = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
@@ -87,18 +102,18 @@ const SanPhamList = () => {
     <div className="container mt-4">
       <h2 className="mb-4">Quản lý Sản phẩm</h2>
       <form onSubmit={handleSearch} className="mb-3">
-          <div className="input-group">
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Tìm kiếm sản phẩm..."
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-            />
-            <button className="btn btn-primary" type="submit">Tìm kiếm</button>
-          </div>
-        </form>
-      {/* Navbar lọc trạng thái */}
+        <div className="input-group">
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Tìm kiếm sản phẩm..."
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+          />
+          <button className="btn btn-primary" type="submit">Tìm kiếm</button>
+        </div>
+      </form>
+
       <div className="btn-group mb-3">
         <button className={`btn btn-${filterStatus === "all" ? "primary" : "secondary"}`} onClick={() => setFilterStatus("all")}>Tất cả</button>
         <button className={`btn btn-${filterStatus === "0" ? "primary" : "secondary"}`} onClick={() => setFilterStatus("0")}>Còn hàng</button>
@@ -106,14 +121,10 @@ const SanPhamList = () => {
         <button className={`btn btn-${filterStatus === "2" ? "primary" : "secondary"}`} onClick={() => setFilterStatus("2")}>Ngừng bán</button>
       </div>
 
-      {/* Đưa nút "Thêm sản phẩm" sang bên phải */}
       <div className="d-flex justify-content-between mb-3">
-        
-
         <a href="/admin/sanpham/form" className="btn btn-success ml-auto">Thêm sản phẩm</a>
       </div>
 
-      {/* Tiếp tục phần hiển thị sản phẩm */}
       {!filteredProducts.length ? (
         <p>Không có sản phẩm nào.</p>
       ) : (
@@ -154,7 +165,7 @@ const SanPhamList = () => {
                   <td>{product.kichthuoc}</td>
                   <td>{product.soluong}</td>
                   <td>{product.danhMuc || 'Không có danh mục'}</td>
-                  <td>{formatDate(product.ngayTao)}</td> {/* Format ngày tại đây */}
+                  <td>{formatDate(product.ngayTao)}</td>
                   <td>{product.mota}</td>
                   <td>
                     <a href={`/admin/sanpham/form?id=${product.id}`} className="btn btn-warning btn-sm">
@@ -162,19 +173,29 @@ const SanPhamList = () => {
                     </a>
                   </td>
                   <td>
-                    <button
-                      className={`btn btn-sm ${product.status === 0 ? 'btn-success' : product.status === 2 ? 'btn-danger' : 'btn-secondary'}`}
-                      onClick={() => toggleStatus(product.id, product.status)}
-                    >
-                      {product.status === 0 ? 'Còn hàng' : product.status === 2 ? 'Ngừng bán' : 'Hết hàng'}
-                    </button>
+                  <button
+  className={`btn btn-sm ${
+    product.status === 0
+      ? 'btn-success'
+      : product.status === 2
+      ? 'btn-danger'
+      : 'btn-secondary'
+  }`}
+  onClick={() => toggleStatus(product.id, product.status)}
+>
+  {product.status === 0
+    ? 'Còn hàng'
+    : product.status === 2
+    ? 'Ngừng bán'
+    : 'Hết hàng'}
+</button>
+
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <div className="d-flex justify-content-center mt-3">
               <nav>

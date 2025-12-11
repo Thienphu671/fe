@@ -1,107 +1,203 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+// src/pages/auth/LoginPage.jsx (hoặc đường dẫn bạn đang dùng)
+"use client"
+
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
 
 const LoginPage = () => {
-    const navigate = useNavigate();
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [errorMessage, setErrorMessage] = useState('');
+  const navigate = useNavigate()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setErrorMessage('');
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setErrorMessage('')
 
-        try {
-            const response = await axios.post('http://localhost:8080/auth/api/login', {
-                email,
-                password
-            });
+    try {
+      const response = await axios.post('http://localhost:8080/auth/api/login', {
+        email,
+        password
+      })
 
-            const { token, user, isAdmin } = response.data;
+      const { token, user, isAdmin } = response.data
 
-            if (!token || !user) {
-                throw new Error('Đăng nhập thất bại');
-            }
+      if (!token || !user) throw new Error('Đăng nhập thất bại')
 
-            document.cookie = `token=${token}; path=/; Secure; SameSite=Strict`;
+      // Lưu thông tin
+      document.cookie = `token=${token}; path=/; Secure; SameSite=Strict`
+      localStorage.setItem('token', token)
+      localStorage.setItem('user', JSON.stringify(user))
+      localStorage.setItem('userId', user.id)
+      localStorage.setItem('userName', user.fullname)
+      localStorage.setItem('isAdmin', isAdmin)
 
-            localStorage.setItem('token', token);
-            localStorage.setItem('user', JSON.stringify(user));
-            localStorage.setItem('userId', user.id);
-            localStorage.setItem('userName', user.fullname);
-            localStorage.setItem('isAdmin', isAdmin);
+      window.dispatchEvent(new Event("userNameUpdated"))
 
-            window.dispatchEvent(new Event("userNameUpdated"));
+      // Chuyển hướng
+      if (isAdmin) {
+        navigate('/admin/AdminNavbar')
+      } else {
+        navigate('/trangChu/form')
+      }
+    } catch (error) {
+      setErrorMessage(
+        error.response?.data?.message || 
+        error.message || 
+        'Email hoặc mật khẩu không đúng!'
+      )
+    }
+  }
 
-            if (isAdmin) {
-                navigate('/admin/AdminNavbar');
-            } else {
-                navigate('/trangChu/form');
-            }
-
-        } catch (error) {
-            setErrorMessage(
-                error.response?.data?.message || error.message || 'Đăng nhập thất bại'
-            );
-        }
-    };
-
-    return (
-        <div
-            style={{
-                backgroundImage: `url('/img/chup-anh-san-pham-phang-1596647399.jpg')`, // <-- cập nhật đường dẫn tùy nơi bạn đặt ảnh
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                minHeight: '100vh',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center'
-            }}
+  return (
+    <div
+      style={{
+        backgroundImage: `url('/img/chup-anh-san-pham-phang-1596647399.jpg')`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: "20px",
+      }}
+    >
+      {/* Khung đăng nhập đẹp lung linh */}
+      <div
+        className="p-5 rounded shadow-2xl"
+        style={{
+          maxWidth: "460px",
+          width: "100%",
+          backgroundColor: "rgba(255, 255, 255, 0.95)",
+          backdropFilter: "blur(12px)",
+          border: "1px solid rgba(255,255,255,0.4)",
+          boxShadow: "0 20px 50px rgba(0,0,0,0.15)",
+        }}
+      >
+        {/* Tiêu đề */}
+        <h2
+          className="mb-5 text-center"
+          style={{
+            fontFamily: "'Georgia', serif",
+            fontSize: "48px",
+            fontWeight: 300,
+            color: "#2d2d2d",
+            letterSpacing: "1px",
+          }}
         >
-            <div className="container p-4 rounded" style={{ maxWidth: '400px', backgroundColor: 'rgba(255, 255, 255, 0.9)' }}>
-                <h2 className="mb-4 text-center">Đăng nhập</h2>
-                <form onSubmit={handleSubmit}>
-                    <div className="mb-3">
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="form-control"
-                            placeholder="Email"
-                            required
-                        />
-                    </div>
-                    <div className="mb-3">
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="form-control"
-                            placeholder="Mật khẩu"
-                            required
-                        />
-                    </div>
-                    <button type="submit" className="btn btn-primary w-100">Đăng nhập</button>
+          Chào Mừng Trở Lại
+        </h2>
 
-                    <div className="text-center mt-3">
-                    <span>Bạn chưa có tài khoản?</span>
-                    <button
-                        type="button"
-                        onClick={() => navigate('/Dangky')}
-                        className="btn btn-link p-0 ms-2"
-                    >
-                        Đăng ký
-                    </button>
-                </div>
-                    {errorMessage && (
-                        <div className="alert alert-danger mt-3">{errorMessage}</div>
-                    )}
-                </form>
-            </div>
-        </div>
-    );
-    
-};
+        {/* Thông báo lỗi */}
+        {errorMessage && (
+          <div
+            className="alert alert-danger mb-4 text-center py-3 rounded"
+            style={{
+              background: "#fadbd8",
+              color: "#e74c3c",
+              border: "none",
+              fontWeight: 600,
+            }}
+          >
+            {errorMessage}
+          </div>
+        )}
 
-export default LoginPage;
+        <form onSubmit={handleSubmit}>
+          {/* Email */}
+          <div className="mb-4">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="form-control form-control-lg"
+              placeholder="Nhập email của bạn"
+              required
+              style={{
+                borderRadius: "16px",
+                padding: "16px 20px",
+                fontSize: "17px",
+                border: "2px solid #eee",
+                transition: "all 0.3s",
+              }}
+              onFocus={(e) => e.target.style.borderColor = "#d4a574"}
+              onBlur={(e) => e.target.style.borderColor = "#eee"}
+            />
+          </div>
+
+          {/* Mật khẩu */}
+          <div className="mb-5">
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="form-control form-control-lg"
+              placeholder="Nhập mật khẩu"
+              required
+              style={{
+                borderRadius: "16px",
+                padding: "16px 20px",
+                fontSize: "17px",
+                border: "2px solid #eee",
+                transition: "all 0.3s",
+              }}
+              onFocus={(e) => e.target.style.borderColor = "#d4a574"}
+              onBlur={(e) => e.target.style.borderColor = "#eee"}
+            />
+          </div>
+
+          {/* Nút Đăng nhập */}
+          <button
+            type="submit"
+            className="w-100 mb-4"
+            style={{
+              padding: "18px",
+              background: "#d4a574",
+              color: "white",
+              border: "none",
+              borderRadius: "50px",
+              fontSize: "20px",
+              fontWeight: 600,
+              cursor: "pointer",
+              boxShadow: "0 12px 30px rgba(212,165,116,0.4)",
+              transition: "all 0.3s",
+              letterSpacing: "1px",
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.background = "#c49a6c")}
+            onMouseOut={(e) => (e.currentTarget.style.background = "#d4a574")}
+          >
+            Đăng Nhập
+          </button>
+
+          {/* Liên kết đăng ký */}
+          <div className="text-center">
+            <span style={{ color: "#555", fontSize: "16px" }}>
+              Chưa có tài khoản?{" "}
+            </span>
+            <button
+              type="button"
+              onClick={() => navigate('/Dangky')}
+              style={{
+                color: "#d4a574",
+                fontWeight: 600,
+                background: "none",
+                border: "none",
+                textDecoration: "underline",
+                fontSize: "16px",
+                cursor: "pointer",
+              }}
+              onMouseOver={(e) => (e.currentTarget.style.color = "#b58556")}
+              onMouseOut={(e) => (e.currentTarget.style.color = "#d4a574")}
+            >
+              Đăng ký ngay
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+export default LoginPage

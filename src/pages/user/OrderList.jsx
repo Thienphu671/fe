@@ -1,11 +1,9 @@
 // src/pages/user/OrderList.jsx
 "use client"
 
-/* eslint-disable no-restricted-globals */
-
 import React, { useEffect, useState } from "react"
 import axios from "axios"
-import { Link, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 
 export default function OrderList() {
   const [orders, setOrders] = useState([])
@@ -15,116 +13,108 @@ export default function OrderList() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    const storedUserId = localStorage.getItem('userId')
-    if (!storedUserId) {
+    const userId = localStorage.getItem("userId")
+    const token = localStorage.getItem("token")
+
+    if (!userId || !token) {
       setLoading(false)
       return
     }
 
-    const token = localStorage.getItem('token')
-    if (!token) {
-      console.error("Không tìm thấy token!")
-      setLoading(false)
-      return
-    }
-
-    axios.get(`http://localhost:8080/api/donHangND/list?userId=${storedUserId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-      withCredentials: true
-    })
-      .then(res => {
+    axios
+      .get(`http://localhost:8080/api/donHangND/list?userId=${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
+      })
+      .then((res) => {
         const data = res.data || []
         setOrders(data)
         setFilteredOrders(data)
         setLoading(false)
       })
-      .catch(err => {
+      .catch((err) => {
         console.error("Lỗi tải đơn hàng:", err)
         setLoading(false)
       })
   }, [])
 
+  // Lọc đơn hàng
   useEffect(() => {
     if (activeFilter === "all") {
       setFilteredOrders(orders)
     } else {
-      setFilteredOrders(orders.filter(order => {
-        if (activeFilter === "pending") return order.status === 0
-        if (activeFilter === "confirmed") return order.status === 1
-        if (activeFilter === "cancelled") return order.status === 2
-        return true
-      }))
+      setFilteredOrders(
+        orders.filter((order) => {
+          if (activeFilter === "pending") return order.status === 0
+          if (activeFilter === "confirmed") return order.status === 1
+          if (activeFilter === "cancelled") return order.status === 2
+          return true
+        })
+      )
     }
   }, [activeFilter, orders])
 
   const cancelOrder = (id) => {
-    if (!confirm("Bạn có chắc chắn muốn hủy đơn hàng này không?")) return
-    axios.post(`http://localhost:8080/api/donHangND/cancel/${id}`)
+    if (!window.confirm("Bạn có chắc chắn muốn hủy đơn hàng này không?")) return
+
+    axios
+      .post(`http://localhost:8080/api/donHangND/cancel/${id}`)
       .then(() => {
-        setOrders(prev => prev.map(o => o.id === id ? { ...o, status: 2 } : o))
+        setOrders((prev) =>
+          prev.map((o) => (o.id === id ? { ...o, status: 2 } : o))
+        )
       })
-      .catch(err => alert("Hủy thất bại: " + (err.response?.data || err.message)))
+      .catch((err) =>
+        alert("Hủy thất bại: " + (err.response?.data || err.message))
+      )
   }
 
   const getStatusInfo = (status) => {
     switch (status) {
-      case 0: return { text: "Chờ xác nhận", color: "#f39c12", bg: "#fff3cd" }
-      case 1: return { text: "Đã xác nhận", color: "#27ae60", bg: "#d5f5e3" }
-      case 2: return { text: "Đã hủy", color: "#e74c3c", bg: "#fadbd8" }
-      default: return { text: "Không xác định", color: "#7f8c8d", bg: "#ecf0f1" }
+      case 0: return { text: "Chờ xác nhận", color: "#f39c12" }
+      case 1: return { text: "Đã xác nhận", color: "#27ae60" }
+      case 2: return { text: "Đã hủy", color: "#e74c3c" }
+      default: return { text: "Không xác định", color: "#7f8c8d" }
     }
   }
 
-  // === XÓA HẾT KHOẢNG TRẮNG – DÍNH SÁT NAV BAR NHƯ TRANG SẢN PHẨM ===
+  const formatDateTime = (dateString) => {
+    const date = new Date(dateString)
+    return date.toLocaleString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    })
+  }
+
+  // Hover giống trang sản phẩm
   useEffect(() => {
     const style = document.createElement("style")
     style.textContent = `
-      html, body, #root { margin:0 !important; padding:0 !important; width:100%; background:#f5f1ed; overflow-x:hidden; }
-      .order-card:hover { transform: translateY(-16px) !important; box-shadow: 0 25px 50px rgba(0,0,0,0.15) !important; }
+      html, body, #root { margin:0; padding:0; width:100%; background:#f5f1ed; overflow-x:hidden; }
+      .order-card:hover { transform: translateY(-16px); box-shadow: 0 25px 50px rgba(0,0,0,0.15); }
     `
     document.head.appendChild(style)
     return () => document.head.removeChild(style)
   }, [])
 
   const styles = {
-    root: {
-      margin: 0,
-      padding: 0,
-      backgroundColor: "#f5f1ed",
-      width: "100%",
-      minHeight: "100vh",
-      overflowX: "hidden"
-    },
+    root: { margin: 0, padding: 0, background: "#f5f1ed", minHeight: "100vh" },
 
-    // HEADER SIÊU GỌN – DÍNH SÁT LÊN TRÊN
-    header: {
-      width: "100%",
-      padding: "10px 5% 40px",   // chỉ để lại 120px để dưới navbar, tiêu đề sát lên
-      textAlign: "center",
-      background: "linear-gradient(to bottom, #f5f1ed 0%, #f5f1ed 60%, rgba(196,186,175,0.05) 100%)"
-    },
-    title: {
-      fontFamily: "'Georgia', serif",
-      fontSize: "52px",
-      fontWeight: 300,
-      color: "#2d2d2d",
-      margin: "0 0 15px 0"   // giảm margin dưới
-    },
-    underline: {
-      height: "5px",
-      width: "90px",
-      backgroundColor: "#d4a574",
-      margin: "0 auto 25px"   // giảm khoảng cách
-    },
+    header: { padding: "10px 20px 60px", textAlign: "center" },
+    title: { fontFamily: "'Georgia', serif", fontSize: "52px", fontWeight: 300, color: "#2d2d2d", margin: "0 0 20px 0" },
+    underline: { height: "5px", width: "90px", backgroundColor: "#d4a574", margin: "0 auto 40px" },
 
-    // BỘ LỌC DÍNH SÁT TIÊU ĐỀ
     filterBar: {
       display: "flex",
       justifyContent: "center",
       gap: "18px",
-      margin: "0 auto 50px",
+      margin: "0 auto 60px",
       flexWrap: "wrap",
-      maxWidth: "1000px"
+      maxWidth: "1000px",
     },
     filterBtn: (isActive) => ({
       padding: "11px 28px",
@@ -136,20 +126,16 @@ export default function OrderList() {
       fontSize: "15.5px",
       cursor: "pointer",
       transition: "all 0.3s",
-      minWidth: "150px"
+      minWidth: "150px",
     }),
 
-    content: {
-      width: "100%",
-      padding: "0 5% 120px",
-      backgroundColor: "#f5f1ed"
-    },
-    grid: {
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))",
-      gap: "50px",
-      maxWidth: "1600px",
-      margin: "0 auto"
+    container: {
+      maxWidth: "1400px",
+      margin: "0 auto",
+      padding: "0 40px 120px",
+      display: "flex",
+      flexDirection: "column",
+      gap: "40px",
     },
 
     card: {
@@ -157,87 +143,106 @@ export default function OrderList() {
       borderRadius: "20px",
       overflow: "hidden",
       boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
-      transition: "all 0.4s ease"
+      transition: "all 0.4s ease",
     },
 
-    cardHeader: { padding: "28px 32px 20px", borderBottom: "1px solid #eee" },
-    orderId: { fontSize: "18px", color: "#7f8c8d", marginBottom: "8px" },
-    orderDate: { fontSize: "15px", color: "#95a5a6" },
+    cardHeader: {
+      padding: "32px 40px",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
 
-    cardBody: { padding: "24px 32px" },
+    headerLeft: { display: "flex", flexDirection: "column", gap: "8px" },
+    orderId: { fontSize: "24px", fontWeight: 600, color: "#2d2d" },
+    orderTime: { fontSize: "16px", color: "#7f8c8d" },
 
-    statusBadge: {
-      display: "inline-block",
-      padding: "8px 20px",
+    statusBadge: (color) => ({
+      padding: "10px 24px",
       borderRadius: "50px",
       fontWeight: 600,
       fontSize: "15px",
-      marginBottom: "20px"
-    },
+      color: "white",
+      backgroundColor: color,
+    }),
 
-    infoRow: {
-      display: "flex",
-      justifyContent: "space-between",
-      marginBottom: "12px",
-      fontSize: "16px"
+    cardBody: {
+      padding: "0 40px 32px",
     },
-    label: { color: "#7f8c8d" },
-    value: { color: "#2d2d2d", fontWeight: 500 },
 
     totalPrice: {
-      fontSize: "24px",
+      textAlign: "right",
+      fontSize: "28px",
       fontWeight: 600,
       color: "#d4a574",
-      textAlign: "right",
-      margin: "20px 0 10px"
+      margin: "20px 0 30px",
     },
 
     actions: {
-      padding: "20px 32px",
-      background: "#f8f9fa",
       display: "flex",
-      gap: "12px",
-      justifyContent: "flex-end"
+      justifyContent: "flex-end",
+      gap: "16px",
     },
+
     btnView: {
-      padding: "12px 28px",
+      padding: "14px 32px",
       background: "#2d2d2d",
       color: "#fff",
       border: "none",
       borderRadius: "8px",
       fontWeight: 600,
-      cursor: "pointer"
+      cursor: "pointer",
+      fontSize: "15px",
     },
+
     btnCancel: {
-      padding: "12px 28px",
+      padding: "14px 32px",
       background: "transparent",
       color: "#e74c3c",
       border: "2px solid #e74c3c",
       borderRadius: "8px",
       fontWeight: 600,
-      cursor: "pointer"
+      cursor: "pointer",
+      fontSize: "15px",
     },
 
-    empty: {
-      textAlign: "center",
-      padding: "100px 20px",
-      fontSize: "26px",
-      color: "#888"
-    },
-    loading: {
-      textAlign: "center",
-      padding: "150px 0",
-      fontSize: "28px",
-      color: "#888"
-    }
+    empty: { textAlign: "center", padding: "140px 20px", color: "#888", fontSize: "28px" },
+    loading: { textAlign: "center", padding: "180px 0", fontSize: "28px", color: "#888" },
   }
 
   if (loading) return <div style={styles.loading}>Đang tải đơn hàng...</div>
 
+  if (orders.length === 0) {
+    return (
+      <div style={styles.root}>
+        <div style={styles.header}>
+          <h1 style={styles.title}>Đơn Hàng Của Tôi</h1>
+          <div style={styles.underline}></div>
+
+          <div style={styles.filterBar}>
+            <button style={styles.filterBtn(activeFilter === "all")} onClick={() => setActiveFilter("all")}>Tất cả</button>
+            <button style={styles.filterBtn(activeFilter === "pending")} onClick={() => setActiveFilter("pending")}>Chờ xác nhận</button>
+            <button style={styles.filterBtn(activeFilter === "confirmed")} onClick={() => setActiveFilter("confirmed")}>Đã xác nhận</button>
+            <button style={styles.filterBtn(activeFilter === "cancelled")} onClick={() => setActiveFilter("cancelled")}>Đã hủy</button>
+          </div>
+        </div>
+
+        <div style={styles.empty}>
+          <p>Bạn chưa có đơn hàng nào</p>
+          <button
+            style={{ marginTop: "40px", padding: "18px 70px", background: "#d4a574", color: "#fff", border: "none", borderRadius: "50px", fontSize: "18px", fontWeight: 600, cursor: "pointer" }}
+            onClick={() => navigate("/sanPham")}
+          >
+            Khám Phá Sản Phẩm
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div style={styles.root}>
-      {/* TIÊU ĐỀ + BỘ LỌC DÍNH SÁT LÊN TRÊN */}
-      <section style={styles.header}>
+      <div style={styles.header}>
         <h1 style={styles.title}>Đơn Hàng Của Tôi</h1>
         <div style={styles.underline}></div>
 
@@ -255,69 +260,45 @@ export default function OrderList() {
             Đã hủy
           </button>
         </div>
-      </section>
+      </div>
 
-      {/* DANH SÁCH ĐƠN HÀNG */}
-      <section style={styles.content}>
-        {filteredOrders.length === 0 ? (
-          <div style={styles.empty}>
-            <p>Không có đơn hàng nào ở trạng thái này</p>
-            <Link to="/sanPham" style={{ marginTop: "30px", padding: "16px 50px", background: "#000", color: "#fff", borderRadius: "8px", textDecoration: "none", display: "inline-block" }}>
-              Tiếp tục mua sắm
-            </Link>
-          </div>
-        ) : (
-          <div style={styles.grid}>
-            {filteredOrders.map((order) => {
-              const status = getStatusInfo(order.status)
-              return (
-                <div
-                  key={order.id}
-                  className="order-card"
-                  style={styles.card}
-                  onMouseEnter={e => e.currentTarget.style.transform = "translateY(-16px)"}
-                  onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
-                >
-                  <div style={styles.cardHeader}>
-                    <div style={styles.orderId}>Đơn hàng #{order.id}</div>
-                    <div style={styles.orderDate}>
-                      {new Date(order.date).toLocaleDateString("vi-VN", {
-                        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                      })}
-                    </div>
-                  </div>
+      <div style={styles.container}>
+        {filteredOrders.map((order) => {
+          const status = getStatusInfo(order.status)
 
-                  <div style={styles.cardBody}>
-                    <div style={{ ...styles.statusBadge, backgroundColor: status.bg, color: status.color }}>
-                      {status.text}
-                    </div>
-
-                    <div style={styles.infoRow}>
-                      <span style={styles.label}>Sản phẩm</span>
-                      <span style={styles.value}>{order.soLuongSanPham || order.items?.length || 0} món</span>
-                    </div>
-
-                    <div style={styles.totalPrice}>
-                      {Number(order.tongTien || 0).toLocaleString("vi-VN")} đ
-                    </div>
-                  </div>
-
-                  <div style={styles.actions}>
-                    <button style={styles.btnView} onClick={() => navigate(`/donHangND/detail/${order.id}`)}>
-                      Xem chi tiết
-                    </button>
-                    {order.status === 0 && (
-                      <button style={styles.btnCancel} onClick={() => cancelOrder(order.id)}>
-                        Hủy đơn hàng
-                      </button>
-                    )}
-                  </div>
+          return (
+            <div key={order.id} className="order-card" style={styles.card}>
+              <div style={styles.cardHeader}>
+                <div style={styles.headerLeft}>
+                  <div style={styles.orderId}>Đơn hàng #{order.id}</div>
+                  <div style={styles.orderTime}>lúc {formatDateTime(order.date || order.ngayDatHang)}</div>
                 </div>
-              )
-            })}
-          </div>
-        )}
-      </section>
+
+                <span style={styles.statusBadge(status.color)}>{status.text}</span>
+              </div>
+
+              <div style={styles.cardBody}>
+               
+
+                <div style={styles.actions}>
+                  <button
+                    style={styles.btnView}
+                    onClick={() => navigate(`/donHangND/detail/${order.id}`)}
+                  >
+                    Xem chi tiết
+                  </button>
+
+                  {order.status === 0 && (
+                    <button style={styles.btnCancel} onClick={() => cancelOrder(order.id)}>
+                      Hủy đơn hàng
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
