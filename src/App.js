@@ -3,7 +3,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-
+import { ToastContainer } from "react-toastify";  // Import đây
+import "react-toastify/dist/ReactToastify.css";
 // User Pages
 import Logout from './pages/user/Logout';
 import LoginPage from './pages/user/LoginPage';
@@ -124,6 +125,18 @@ function App() {
           }
         />
       </Routes>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </Router>
   );
 }
