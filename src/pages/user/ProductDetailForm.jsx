@@ -1,544 +1,205 @@
+"use client"
 
+import React, { useState, useEffect } from "react"
+import { useParams, Link, useNavigate } from "react-router-dom"
+import { getProductById } from "../../api/sanPhamND"
+import { themVaoGiohang } from "../../api/giohang"
+import { addFavorite } from "../../api/yeuthich"
+import { toast } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faStar, faHeart } from "@fortawesome/free-solid-svg-icons"
+import axios from "axios"
 
+const token = localStorage.getItem("token")
 
-// // import axios from "axios";
-// // import React, { useState, useEffect } from "react";
-// // import { getProductById } from "../../api/sanPhamND";
-// // import { useParams } from "react-router-dom";
-// // import { themVaoGiohang } from "../../api/giohang";
-// // import { addFavorite } from "../../api/yeuthich";
-// // import { toast } from 'react-toastify';
-// // import 'react-toastify/dist/ReactToastify.css';
-
-// // const token = localStorage.getItem("token");
-
-// // export const getProductReviews = async (productId) => {
-// //   try {
-// //     const response = await axios.get(
-// //       `http://localhost:8080/api/danhgia/sanpham/${productId}`,
-// //       {
-// //         headers: {
-// //           Authorization: `Bearer ${token}`,
-// //         },
-// //       }
-// //     );
-// //     return response.data;
-// //   } catch (error) {
-// //     console.error("Error fetching product reviews:", error.response ? error.response.data : error.message);
-// //     throw error;
-// //   }
-// // };
-
-// // const ProductDetailForm = () => {
-// //   const { id } = useParams();
-// //   const [productDetails, setProductDetails] = useState({});
-// //   const [reviews, setReviews] = useState([]);
-// //   const [quantity, setQuantity] = useState(1);
-// //   const [reviewContent, setReviewContent] = useState("");
-// //   const [rating, setRating] = useState(5);
-
-// //   const loadProductById = async (id) => {
-// //     try {
-// //       const response = await getProductById(id);
-// //       setProductDetails(response);
-// //     } catch (error) {
-// //       console.error("Lỗi khi tải sản phẩm:", error);
-// //     }
-// //   };
-
-// //   const loadReviews = async (productId) => {
-// //     try {
-// //       const danhGiaList = await getProductReviews(productId);
-// //       setReviews(danhGiaList);
-// //     } catch (error) {
-// //       console.error("Lỗi khi tải đánh giá sản phẩm:", error);
-// //     }
-// //   };
-
-// //   useEffect(() => {
-// //     if (id) {
-// //       loadProductById(id);
-// //       loadReviews(id);
-// //     }
-// //   }, [id]);
-
-// //   const productImageUrl = productDetails.hinh
-// //     ? `http://localhost:8080${productDetails.hinh}`
-// //     : "/path/to/default-image.jpg";
-
-// //   const formatDate = (dateString) => {
-// //     if (!dateString) return 'Chưa có thông tin';
-// //     const date = new Date(dateString);
-// //     return isNaN(date) ? 'Ngày không hợp lệ' : date.toLocaleDateString();
-// //   };
-
-// //   const checkValue = (value, defaultValue) => {
-// //     return value && value !== "null" && value !== "undefined" ? value : defaultValue;
-// //   };
-
-// //   const handleAddToCart = (e) => {
-// //     e.preventDefault();
-// //     console.log("Sản phẩm đã được thêm vào giỏ hàng", productDetails, "Số lượng:", quantity);
-// //   };
-
-// //   const handleQuantityChange = (e) => {
-// //     const value = e.target.value;
-// //     if (value >= 1) {
-// //       setQuantity(value);
-// //     }
-// //   };
-
-// //   const handleAddToWishlist = async () => {
-// //     try {
-// //       await addFavorite(productDetails.id);
-// //       alert("Đã thêm sản phẩm vào danh sách yêu thích!");
-// //     } catch (error) {
-// //       alert("Vui lòng đăng nhập để thêm vào yêu thích.");
-// //     }
-// //   };
-
-// //   const handleThemVaoGiohang = async (productId, quantity) => {
-// //     try {
-// //       await themVaoGiohang(productId, quantity);
-// //       toast.success("Đã thêm sản phẩm vào giỏ hàng!");
-// //     } catch (error) {
-// //       console.error("Lỗi khi thêm vào giỏ hàng:", error);
-// //       toast.error("Sản phẩm vượt quá số lượng cho phép!");
-// //     }
-// //   };
-
-// //   return (
-// //     <div className="container">
-// //       <h2 className="text-center mb-4">Chi Tiết Sản Phẩm</h2>
-// //       <div className="row">
-// //         <div className="col-md-5">
-// //           <img src={productImageUrl} className="img-fluid rounded" alt={productDetails.ten} />
-// //         </div>
-// //         <div className="col-md-7">
-// //           <h3 className="fw-bold">{checkValue(productDetails.ten, 'Không có tên sản phẩm')}</h3>
-// //           <p className="text-danger fw-bold fs-4">{checkValue(productDetails.gia, 'Chưa có giá')} ₫</p>
-// //           <p><strong>Danh mục:</strong> {checkValue(productDetails.danhMuc, 'Không có thông tin')}</p>
-// //           <p><strong>Kích thước:</strong> {checkValue(productDetails.kichthuoc, 'Không có thông tin')}</p>
-// //           <p><strong>Mô tả:</strong></p>
-// //           <p>{checkValue(productDetails.mota, 'Không có mô tả sản phẩm.')}</p>
-// //           <p><strong>Số lượng trong kho:</strong> {checkValue(productDetails.soluong, 'Chưa cập nhật')}</p>
-// //           <p><strong>Ngày tạo:</strong> {formatDate(productDetails.ngayTao)}</p>
-
-// //           <form onSubmit={handleAddToCart}>
-// //             <div className="mb-2">
-// //               <label htmlFor="soLuong" className="form-label">Số lượng</label>
-// //               <input
-// //                 type="number"
-// //                 name="soLuong"
-// //                 value={quantity}
-// //                 min="1"
-// //                 id="soLuong"
-// //                 className="form-control"
-// //                 style={{ width: "80px", display: "inline-block" }}
-// //                 onChange={handleQuantityChange}
-// //               />
-// //             </div>
-// //             <button
-// //               className="btn btn-success"
-// //               type="button"
-// //               onClick={() => handleThemVaoGiohang(productDetails.id, quantity)}
-// //             >
-// //               Thêm vào Giỏ Hàng
-// //             </button>
-// //           </form>
-
-// //           <a
-// //             href="#"
-// //             className="btn btn-outline-danger mt-2"
-// //             onClick={handleAddToWishlist}
-// //           >
-// //             <i className="bi bi-heart"></i> Yêu thích
-// //           </a>
-// //         </div>
-// //       </div>
-
-// //       <div className="mt-5">
-// //         <h4 className="fw-bold">Đánh giá sản phẩm</h4>
-// //         <div>
-// //           {reviews && reviews.length > 0 ? (
-// //             reviews.map((review) => (
-// //               <div key={review.id} className="border-bottom pb-3 mb-3">
-// //                 <p><strong>{review.taiKhoan?.ten || 'Tên người dùng không có'}</strong> ({review.sao} sao)</p>
-// //                 <p>{review.noiDung}</p>
-// //                 <p><em>{formatDate(review.ngayDanhgia)}</em></p>
-// //               </div>
-// //             ))
-// //           ) : (
-// //             <p>Chưa có đánh giá cho sản phẩm này.</p>
-// //           )}
-// //         </div>
-// //       </div>
-// //     </div>
-// //   );
-// // };
-
-// // export default ProductDetailForm;
-
-
-// import axios from "axios";
-// import React, { useState, useEffect } from "react";
-// import { getProductById } from "../../api/sanPhamND";
-// import { useParams } from "react-router-dom";
-// import { themVaoGiohang } from "../../api/giohang";
-// import { addFavorite } from "../../api/yeuthich";
-// import { toast } from 'react-toastify';
-// import 'react-toastify/dist/ReactToastify.css';
-
-// const token = localStorage.getItem("token");
-
-// export const getProductReviews = async (productId) => {
-//   try {
-//     const response = await axios.get(
-//       `http://localhost:8080/api/danhgia/sanpham/${productId}`,
-//       {
-//         headers: {
-//           Authorization: `Bearer ${token}`,
-//         },
-//       }
-//     );
-//     return response.data;
-//   } catch (error) {
-//     console.error("Error fetching product reviews:", error.response ? error.response.data : error.message);
-//     throw error;
-//   }
-// };
-
-// const ProductDetailForm = () => {
-//   const { id } = useParams();
-//   const [productDetails, setProductDetails] = useState({});
-//   const [reviews, setReviews] = useState([]);
-//   const [quantity, setQuantity] = useState(1);
-//   const [reviewContent, setReviewContent] = useState("");
-//   const [rating, setRating] = useState(5);
-
-//   const loadProductById = async (id) => {
-//     try {
-//       const response = await getProductById(id);
-//       setProductDetails(response);
-//     } catch (error) {
-//       console.error("Lỗi khi tải sản phẩm:", error);
-//     }
-//   };
-
-//   const loadReviews = async (productId) => {
-//     try {
-//       const danhGiaList = await getProductReviews(productId);
-//       setReviews(danhGiaList);
-//     } catch (error) {
-//       console.error("Lỗi khi tải đánh giá sản phẩm:", error);
-//     }
-//   };
-
-//   useEffect(() => {
-//     if (id) {
-//       loadProductById(id);
-//       loadReviews(id);
-//     }
-//   }, [id]);
-
-//   const productImageUrl = productDetails.hinh
-//     ? `http://localhost:8080${productDetails.hinh}`
-//     : "/path/to/default-image.jpg";
-
-//   const formatDate = (dateString) => {
-//     if (!dateString) return 'Chưa có thông tin';
-//     const date = new Date(dateString);
-//     return isNaN(date) ? 'Ngày không hợp lệ' : date.toLocaleDateString();
-//   };
-
-//   const checkValue = (value, defaultValue) => {
-//     return value && value !== "null" && value !== "undefined" ? value : defaultValue;
-//   };
-
-//   const handleAddToCart = (e) => {
-//     e.preventDefault();
-//     console.log("Sản phẩm đã được thêm vào giỏ hàng", productDetails, "Số lượng:", quantity);
-//   };
-
-//   const handleQuantityChange = (e) => {
-//     const value = e.target.value;
-//     if (value >= 1) {
-//       setQuantity(value);
-//     }
-//   };
-
-//   const handleAddToWishlist = async () => {
-//     try {
-//       await addFavorite(productDetails.id);
-//       alert("Đã thêm sản phẩm vào danh sách yêu thích!");
-//     } catch (error) {
-//       alert("Vui lòng đăng nhập để thêm vào yêu thích.");
-//     }
-//   };
-
-//   const handleThemVaoGiohang = async (productId, quantity) => {
-//     try {
-//       await themVaoGiohang(productId, quantity);
-//       toast.success("Đã thêm sản phẩm vào giỏ hàng!");
-//     } catch (error) {
-//       console.error("Lỗi khi thêm vào giỏ hàng:", error);
-//       toast.error("Sản phẩm vượt quá số lượng cho phép!");
-//     }
-//   };
-
-//   return (
-//     <div className="container">
-//       <h2 className="text-center mb-4">Chi Tiết Sản Phẩm</h2>
-//       <div className="row">
-//         <div className="col-md-5">
-//           <img src={productImageUrl} className="img-fluid rounded" alt={productDetails.ten} />
-//         </div>
-//         <div className="col-md-7">
-//           <h3 className="fw-bold">{checkValue(productDetails.ten, 'Không có tên sản phẩm')}</h3>
-//           <p className="text-danger fw-bold fs-4">{checkValue(productDetails.gia, 'Chưa có giá')} ₫</p>
-//           <p><strong>Danh mục:</strong> {checkValue(productDetails.danhMuc, 'Không có thông tin')}</p>
-//           <p><strong>Kích thước:</strong> {checkValue(productDetails.kichthuoc, 'Không có thông tin')}</p>
-//           <p><strong>Mô tả:</strong></p>
-//           <p>{checkValue(productDetails.mota, 'Không có mô tả sản phẩm.')}</p>
-//           <p><strong>Số lượng trong kho:</strong> {checkValue(productDetails.soluong, 'Chưa cập nhật')}</p>
-//           <p><strong>Ngày tạo:</strong> {formatDate(productDetails.ngayTao)}</p>
-
-//           <form onSubmit={handleAddToCart}>
-//             <div className="mb-2">
-//               <label htmlFor="soLuong" className="form-label">Số lượng</label>
-//               <input
-//                 type="number"
-//                 name="soLuong"
-//                 value={quantity}
-//                 min="1"
-//                 id="soLuong"
-//                 className="form-control"
-//                 style={{ width: "80px", display: "inline-block" }}
-//                 onChange={handleQuantityChange}
-//               />
-//             </div>
-//             <button
-//               className="btn btn-success"
-//               type="button"
-//               onClick={() => handleThemVaoGiohang(productDetails.id, quantity)}
-//             >
-//               Thêm vào Giỏ Hàng
-//             </button>
-//           </form>
-
-//           <a
-//             href="#"
-//             className="btn btn-outline-danger mt-2"
-//             onClick={handleAddToWishlist}
-//           >
-//             <i className="bi bi-heart"></i> Yêu thích
-//           </a>
-//         </div>
-//       </div>
-
-//       <div className="mt-5">
-//         <h4 className="fw-bold">Đánh giá sản phẩm</h4>
-//         <div>
-//           {reviews && reviews.length > 0 ? (
-//             reviews.map((review) => (
-//               <div key={review.id} className="border-bottom pb-3 mb-3">
-//                 <p><strong>{review.taiKhoan ? review.taiKhoan.ten : 'Tên người dùng không có'}</strong> ({review.sao} sao)</p>
-//                 <p>{review.noiDung}</p>
-//                 <p><em>{formatDate(review.ngayDanhgia)}</em></p>
-//               </div>
-//             ))
-//           ) : (
-//             <p>Chưa có đánh giá cho sản phẩm này.</p>
-//           )}
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default ProductDetailForm;
-
-
-import axios from "axios";
-import React, { useState, useEffect } from "react";
-import { getProductById } from "../../api/sanPhamND";
-import { useParams } from "react-router-dom";
-import { themVaoGiohang } from "../../api/giohang";
-import { addFavorite } from "../../api/yeuthich";
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStar } from '@fortawesome/free-solid-svg-icons';
-const token = localStorage.getItem("token");
-
-export const getProductReviews = async (productId) => {
+const getProductReviews = async (productId) => {
   try {
-    const response = await axios.get(
-      `http://localhost:8080/api/danhgia/sanpham/${productId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-    return response.data;
+    const res = await axios.get(`http://localhost:8080/api/danhgia/sanpham/${productId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    return res.data
   } catch (error) {
-    console.error("Error fetching product reviews:", error.response ? error.response.data : error.message);
-    throw error;
+    console.error("Lỗi tải đánh giá:", error)
+    return []
   }
-};
+}
 
 const ProductDetailForm = () => {
-  const { id } = useParams();
-  const [productDetails, setProductDetails] = useState({});
-  const [reviews, setReviews] = useState([]);
-  const [quantity, setQuantity] = useState(1);
-  const [reviewContent, setReviewContent] = useState("");
-  const [rating, setRating] = useState(5);
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const [product, setProduct] = useState({})
+  const [reviews, setReviews] = useState([])
+  const [quantity, setQuantity] = useState(1)
+  const [loading, setLoading] = useState(true)
 
-  const loadProductById = async (id) => {
-    try {
-      const response = await getProductById(id);
-      setProductDetails(response);
-    } catch (error) {
-      console.error("Lỗi khi tải sản phẩm:", error);
-    }
-  };
-
-  const loadReviews = async (productId) => {
-    try {
-      const danhGiaList = await getProductReviews(productId);
-      setReviews(danhGiaList);
-    } catch (error) {
-      console.error("Lỗi khi tải đánh giá sản phẩm:", error);
-    }
-  };
+  const imageUrl = product.hinh ? `http://localhost:8080${product.hinh}` : "https://via.placeholder.com/800"
 
   useEffect(() => {
-    if (id) {
-      loadProductById(id);
-      loadReviews(id);
+    const loadData = async () => {
+      try {
+        const [prodRes, reviewRes] = await Promise.all([
+          getProductById(id),
+          getProductReviews(id),
+        ])
+        setProduct(prodRes)
+        setReviews(reviewRes)
+        setLoading(false)
+      } catch (err) {
+        console.error(err)
+        setLoading(false)
+      }
     }
-  }, [id]);
+    if (id) loadData()
+  }, [id])
 
-  const productImageUrl = productDetails.hinh
-    ? `http://localhost:8080${productDetails.hinh}`
-    : "/path/to/default-image.jpg";
-
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Chưa có thông tin';
-    const date = new Date(dateString);
-    return isNaN(date) ? 'Ngày không hợp lệ' : date.toLocaleDateString();
-  };
-
-  const checkValue = (value, defaultValue) => {
-    return value && value !== "null" && value !== "undefined" ? value : defaultValue;
-  };
-
-  const handleAddToCart = (e) => {
-    e.preventDefault();
-    console.log("Sản phẩm đã được thêm vào giỏ hàng", productDetails, "Số lượng:", quantity);
-  };
-
-  const handleQuantityChange = (e) => {
-    const value = e.target.value;
-    if (value >= 1) {
-      setQuantity(value);
+  const handleAddToCart = async () => {
+    try {
+      await themVaoGiohang(product.id, quantity)
+      toast.success("Đã thêm vào giỏ hàng!", { autoClose: 2000 })
+    } catch (err) {
+      toast.error("Không thể thêm vào giỏ (hết hàng hoặc chưa đăng nhập)")
     }
-  };
+  }
 
   const handleAddToWishlist = async () => {
     try {
-      await addFavorite(productDetails.id);
-      alert("Đã thêm sản phẩm vào danh sách yêu thích!");
-    } catch (error) {
-      alert("Vui lòng đăng nhập để thêm vào yêu thích.");
+      await addFavorite(product.id)
+      toast.success("Đã thêm vào yêu thích!", {
+        icon: <FontAwesomeIcon icon={faHeart} style={{color: "#ff6b9d"}} />,
+      })
+    } catch (err) {
+      toast.error(err.message || "Vui lòng đăng nhập để thêm yêu thích")
     }
-  };
+  }
 
-  const handleThemVaoGiohang = async (productId, quantity) => {
-    try {
-      await themVaoGiohang(productId, quantity);
-      toast.success("Đã thêm sản phẩm vào giỏ hàng!");
-    } catch (error) {
-      console.error("Lỗi khi thêm vào giỏ hàng:", error);
-      toast.error("Sản phẩm vượt quá số lượng cho phép!");
-    }
-  };
+  useEffect(() => {
+    const style = document.createElement("style")
+    style.textContent = `
+      html, body, #root { margin:0; padding:0; width:100%; background:#f5f1ed; overflow-x:hidden; }
+      .btn-add-cart { background:#000 !important; color:white !important; box-shadow:0 8px 20px rgba(0,0,0,0.15); transition:all 0.4s ease; }
+      .btn-add-cart:hover { background:#111 !important; transform:translateY(-6px); box-shadow:0 16px 32px rgba(0,0,0,0.3); }
+      .btn-wishlist { background:linear-gradient(135deg,#ff6b9d,#ff8fb3) !important; color:white !important; box-shadow:0 8px 20px rgba(255,107,157,0.3); transition:all 0.4s ease; }
+      .btn-wishlist:hover { background:linear-gradient(135deg,#ff4f8a,#ff6b9d) !important; transform:translateY(-6px); box-shadow:0 16px 32px rgba(255,107,157,0.5); }
+      .product-image:hover { transform:scale(1.05); }
+    `
+    document.head.appendChild(style)
+    return () => document.head.removeChild(style)
+  }, [])
+
+  const styles = {
+    root: { margin:0, padding:0, backgroundColor:"#f5f1ed", width:"100%", minHeight:"100vh", overflowX:"hidden" },
+    heroSection: { width:"100%", padding:"100px 5% 80px", background:"linear-gradient(to bottom, #f5f1ed 0%, #f5f1ed 60%, rgba(196,186,175,0.05) 100%)" },
+    content: { maxWidth:"1600px", margin:"0 auto", padding:"0 5%" },
+    breadcrumb: { marginBottom:"32px", fontSize:"15px", color:"#888" },
+    grid: { display:"grid", gridTemplateColumns:"1fr 1fr", gap:"80px", alignItems:"start" },
+    imageWrapper: { borderRadius:"24px", overflow:"hidden", boxShadow:"0 15px 40px rgba(0,0,0,0.12)", background:"#fff" },
+    image: { width:"100%", height:"auto", display:"block", transition:"transform 0.8s ease" },
+    infoSection: { padding:"40px 0" },
+    name: { fontFamily:"'Georgia', serif", fontSize:"48px", fontWeight:300, color:"#2d2d2d", margin:"0 0 20px 0", lineHeight:1.2 },
+    price: { fontSize:"36px", fontWeight:600, color:"#d4a574", margin:"0 0 32px 0" },
+    meta: { marginBottom:"32px", lineHeight:2, color:"#555", fontSize:"17px" },
+    description: { fontSize:"18px", lineHeight:1.8, color:"#444", margin:"40px 0", background:"rgba(255,255,255,0.6)", padding:"32px", borderRadius:"16px" },
+    quantityBox: { display:"flex", alignItems:"center", gap:"20px", margin:"40px 0" },
+    quantityInput: { width:"100px", padding:"14px", fontSize:"18px", textAlign:"center", border:"2px solid #ddd", borderRadius:"12px" },
+    buttonGroup: { display:"flex", gap:"24px", flexWrap:"wrap" },
+    btnAddCart: { padding:"18px 52px", backgroundColor:"#000000", color:"#ffffff", border:"none", borderRadius:"50px", fontSize:"16px", fontWeight:600, letterSpacing:"1.5px", cursor:"pointer", boxShadow:"0 8px 20px rgba(0,0,0,0.15)", display:"inline-block" },
+    btnWishlist: { padding:"18px 52px", background:"linear-gradient(135deg,#ff6b9d,#ff8fb3)", color:"#ffffff", border:"none", borderRadius:"50px", fontSize:"16px", fontWeight:600, letterSpacing:"1.5px", cursor:"pointer", boxShadow:"0 8px 20px rgba(255,107,157,0.3)", display:"inline-flex", alignItems:"center", gap:"12px" },
+    reviewsSection: { marginTop:"120px", padding:"80px 5%", backgroundColor:"rgba(255,255,255,0.6)", borderRadius:"24px" },
+    reviewsTitle: { fontFamily:"'Georgia', serif", fontSize:"44px", fontWeight:300, textAlign:"center", marginBottom:"60px", color:"#2d2d2d" },
+    reviewCard: { background:"#fff", padding:"32px", borderRadius:"20px", marginBottom:"24px", boxShadow:"0 10px 30px rgba(0,0,0,0.08)" },
+    reviewerName: { fontSize:"18px", fontWeight:600 },
+    reviewText: { fontSize:"17px", fontStyle:"italic", color:"#555", margin:"16px 0" },
+    reviewDate: { color:"#999", fontSize:"15px" },
+    noReviews: { textAlign:"center", padding:"80px 0", fontSize:"22px", color:"#888" },
+  }
+
+  if (loading) return <div style={{textAlign:"center", padding:"150px 0", fontSize:"28px", color:"#888"}}>Đang tải chi tiết sản phẩm...</div>
 
   return (
-    <div className="container">
-      <h2 className="text-center mb-4">Chi Tiết Sản Phẩm</h2>
-      <div className="row">
-        <div className="col-md-5">
-          <img src={productImageUrl} className="img-fluid rounded" alt={productDetails.ten} />
-        </div>
-        <div className="col-md-7">
-          <h3 className="fw-bold">{checkValue(productDetails.ten, 'Không có tên sản phẩm')}</h3>
-          <p className="text-danger fw-bold fs-4">{checkValue(productDetails.gia, 'Chưa có giá')} ₫</p>
-          <p><strong>Danh mục:</strong> {checkValue(productDetails.danhMuc, 'Không có thông tin')}</p>
-          <p><strong>Kích thước:</strong> {checkValue(productDetails.kichthuoc, 'Không có thông tin')}</p>
-          <p><strong>Mô tả:</strong></p>
-          <p>{checkValue(productDetails.mota, 'Không có mô tả sản phẩm.')}</p>
-          <p><strong>Số lượng trong kho:</strong> {checkValue(productDetails.soluong, 'Chưa cập nhật')}</p>
-          <p><strong>Ngày tạo:</strong> {formatDate(productDetails.ngayTao)}</p>
+    <div style={styles.root}>
+      <section style={styles.heroSection}>
+        <div style={styles.content}>
+          <div style={styles.breadcrumb}>
+            <Link to="/" style={{color:"#888", textDecoration:"none"}}>Trang chủ</Link> → 
+            <Link to="/sanPham" style={{color:"#888", textDecoration:"none", margin:"0 8px"}}>Sản phẩm</Link> → 
+            <span style={{color:"#d4a574", fontWeight:600}}>{product.ten}</span>
+          </div>
 
-          <form onSubmit={handleAddToCart}>
-            <div className="mb-2">
-              <label htmlFor="soLuong" className="form-label">Số lượng</label>
-              <input
-                type="number"
-                name="soLuong"
-                value={quantity}
-                min="1"
-                id="soLuong"
-                className="form-control"
-                style={{ width: "80px", display: "inline-block" }}
-                onChange={handleQuantityChange}
-              />
+          <div style={styles.grid}>
+            <div style={styles.imageWrapper}>
+              <img src={imageUrl} alt={product.ten} style={styles.image} className="product-image" />
             </div>
-            <button
-              className="btn btn-success"
-              type="button"
-              onClick={() => handleThemVaoGiohang(productDetails.id, quantity)}
-            >
-              Thêm vào Giỏ Hàng
-            </button>
-          </form>
 
-          <a
-            href="#"
-            className="btn btn-outline-danger mt-2"
-            onClick={handleAddToWishlist}
-          >
-            <i className="bi bi-heart"></i> Yêu thích
-          </a>
+            <div style={styles.infoSection}>
+              <h1 style={styles.name}>{product.ten}</h1>
+              <p style={styles.price}>{Number(product.gia).toLocaleString("vi-VN")} đ</p>
+
+              <div style={styles.meta}>
+                <p><strong>Danh mục:</strong> {product.danhMuc || "Chưa phân loại"}</p>
+                <p><strong>Kích thước:</strong> {product.kichthuoc || "Free size"}</p>
+                <p><strong>Kho:</strong> {product.soluong > 0 ? `${product.soluong} sản phẩm` : <span style={{color:"#e74c3c"}}>Hết hàng</span>}</p>
+              </div>
+
+              <div style={styles.description}>
+                {product.mota || "Sản phẩm chất lượng cao với thiết kế tinh tế, mang đến sự thoải mái và phong cách tối ưu cho bạn."}
+              </div>
+
+              <div style={styles.quantityBox}>
+                <strong>Số lượng:</strong>
+                <input
+                  type="number"
+                  min="1"
+                  max={product.soluong || 1}
+                  value={quantity}
+                  onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
+                  style={styles.quantityInput}
+                />
+              </div>
+
+              <div style={styles.buttonGroup}>
+                <button style={styles.btnAddCart} className="btn-add-cart" onClick={handleAddToCart}>
+                  Thêm vào Giỏ Hàng
+                </button>
+                <button style={styles.btnWishlist} className="btn-wishlist" onClick={handleAddToWishlist}>
+                  <FontAwesomeIcon icon={faHeart} /> Yêu Thích
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div className="mt-5">
-  <h4>Đánh Giá Sản Phẩm</h4>
-  {reviews.length === 0 ? (
-    <p>Chưa có đánh giá nào cho sản phẩm này.</p>
-  ) : (
-    reviews.map((review, index) => (
-      <div key={index} className="border rounded p-3 mb-3">
-        <p className="fw-bold mb-1">
-          {review.tenNguoiDung || `Người dùng #${review.taiKhoanId}`}{" "}
-          {[...Array(review.sao)].map((_, i) => (
-            <FontAwesomeIcon key={i} icon={faStar} className="text-warning me-1" />
-          ))}
-        </p>
-        <p className="fst-italic mb-1">"{review.danhgia}"</p>
-        <p className="text-muted">{formatDate(review.ngayDanhgia)}</p>
-      </div>
-    ))
-  )}
-</div>
-
-
+      <section style={styles.reviewsSection}>
+        <h2 style={styles.reviewsTitle}>Đánh Giá Từ Khách Hàng</h2>
+        {reviews.length === 0 ? (
+          <p style={styles.noReviews}>Chưa có đánh giá nào. Hãy là người đầu tiên!</p>
+        ) : (
+          reviews.map((r, i) => (
+            <div key={i} style={styles.reviewCard}>
+              <div style={{display:"flex", alignItems:"center", gap:"12px", marginBottom:"16px"}}>
+                <strong style={styles.reviewerName}>{r.tenNguoiDung || "Khách hàng"}</strong>
+                <div>
+                  {[...Array(5)].map((_, idx) => (
+                    <FontAwesomeIcon
+                      key={idx}
+                      icon={faStar}
+                      color={idx < r.sao ? "#ffc107" : "#e0e0e0"}
+                      style={{fontSize:"18px"}}
+                    />
+                  ))}
+                </div>
+              </div>
+              <p style={styles.reviewText}>"{r.danhgia}"</p>
+              <p style={styles.reviewDate}>
+                {new Date(r.ngayDanhgia).toLocaleDateString("vi-VN")}
+              </p>
+            </div>
+          ))
+        )}
+      </section>
     </div>
-  );
-};
+  )
+}
 
-export default ProductDetailForm;
+export default ProductDetailForm
