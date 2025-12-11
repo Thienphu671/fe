@@ -13,8 +13,15 @@ const TrangChu = () => {
   useEffect(() => {
     const fetchFeatured = async () => {
       try {
-        const response = await getProducts("", null, "asc", 0, 12)
-        setFeaturedProducts(response.products || [])
+        const response = await getProducts("", null, "asc", 0, 50)
+        let products = response.products || []
+
+        // Sắp xếp giá giảm dần và lấy 8 sản phẩm đắt nhất
+        products = products
+          .sort((a, b) => Number(b.gia) - Number(a.gia))
+          .slice(0, 8)
+
+        setFeaturedProducts(products)
         setLoading(false)
       } catch (error) {
         console.error("Lỗi khi lấy sản phẩm nổi bật:", error)
@@ -91,9 +98,11 @@ const TrangChu = () => {
       minHeight: "100vh",
       overflowX: "hidden"
     },
+
+    // Hero sát navbar
     heroSection: {
       width: "100%",
-      padding: "100px 5% 10px",
+      padding: "20px 5% 60px",
       margin: 0,
       background: "linear-gradient(to bottom, #f5f1ed 0%, #f5f1ed 60%, rgba(196, 186, 175, 0.05) 100%)",
       textAlign: "center"
@@ -108,7 +117,7 @@ const TrangChu = () => {
       fontFamily: "'Georgia', serif",
       fontSize: "56px",
       fontWeight: 300,
-      margin: "0 0 28px 0",
+      margin: "0 0 20px 0",
       color: "#2d2d2d",
       lineHeight: 1.2
     },
@@ -116,7 +125,7 @@ const TrangChu = () => {
       fontSize: "20px",
       color: "#555",
       maxWidth: "800px",
-      margin: "0 auto 48px",
+      margin: "0 auto 40px",
       fontWeight: 300,
       lineHeight: 1.7
     },
@@ -126,8 +135,6 @@ const TrangChu = () => {
       justifyContent: "center",
       flexWrap: "wrap"
     },
-
-    // NÚT ĐEN
     primaryButton: {
       padding: "18px 52px",
       backgroundColor: "#000000",
@@ -143,8 +150,6 @@ const TrangChu = () => {
       boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
       display: "inline-block"
     },
-
-    // NÚT HỒNG
     favoriteButton: {
       padding: "18px 52px",
       background: "linear-gradient(135deg, #ff6b9d, #ff8fb3)",
@@ -161,12 +166,50 @@ const TrangChu = () => {
       display: "inline-block"
     },
 
-    productSection: { width: "100%", padding: "140px 0", margin: 0, backgroundColor: "#f5f1ed" },
-    productContainer: { width: "100%", maxWidth: "1600px", margin: "0 auto", padding: "0 5%" },
-    sectionTitle: { fontFamily: "'Georgia', serif", fontSize: "44px", fontWeight: 300, color: "#2d2d2d", textAlign: "center", marginBottom: "16px" },
-    sectionUnderline: { height: "5px", width: "90px", backgroundColor: "#d4a574", margin: "0 auto 60px" },
-    productGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: "50px", padding: "0 5%" },
-    productCard: { background: "#fff", borderRadius: "20px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.08)", transition: "all 0.4s" },
+    // Product section - giảm padding trên để tiêu đề sát grid
+    productSection: {
+      width: "100%",
+      padding: "10px 0 140px",  // Giảm mạnh padding-top từ 100px → 40px
+      margin: 0,
+      backgroundColor: "#f5f1ed"
+    },
+    productContainer: {
+      width: "100%",
+      maxWidth: "1600px",
+      margin: "0 auto",
+      padding: "0 5%"
+    },
+    sectionTitle: {
+      fontFamily: "'Georgia', serif",
+      fontSize: "44px",
+      fontWeight: 300,
+      color: "#2d2d2d",
+      textAlign: "center",
+      margin: "0 0 8px 0"  // Giảm margin-bottom
+    },
+    sectionUnderline: {
+      height: "5px",
+      width: "90px",
+      backgroundColor: "#d4a574",
+      margin: "0 auto 30px"  // Giảm khoảng cách từ underline xuống grid (trước là 60px)
+    },
+
+    // Grid 4 sản phẩm/hàng
+    productGrid: {
+      display: "grid",
+      gridTemplateColumns: "repeat(4, 1fr)",
+      gap: "40px",
+      padding: "0 5%"
+    },
+
+    productCard: {
+      background: "#fff",
+      borderRadius: "20px",
+      overflow: "hidden",
+      boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+      transition: "all 0.4s",
+      cursor: "pointer"
+    },
     productImageContainer: { position: "relative", overflow: "hidden", aspectRatio: "1" },
     productImage: { width: "100%", height: "100%", objectFit: "cover", transition: "0.6s" },
     productOverlay: { position: "absolute", inset: 0, background: "rgba(0,0,0,0)", display: "flex", alignItems: "center", justifyContent: "center", transition: "0.4s" },
@@ -176,9 +219,19 @@ const TrangChu = () => {
     productPrice: { fontSize: "22px", fontWeight: 600, color: "#d4a574" },
   }
 
+  // Responsive grid (vì style object không hỗ trợ @media trực tiếp, xử lý bằng inline style động)
+  const getGridColumns = () => {
+    if (typeof window === "undefined") return "repeat(4, 1fr)"
+    const width = window.innerWidth
+    if (width <= 600) return "1fr"
+    if (width <= 900) return "repeat(2, 1fr)"
+    if (width <= 1200) return "repeat(3, 1fr)"
+    return "repeat(4, 1fr)"
+  }
+
   return (
     <div style={styles.root}>
-      {/* HERO - FULL MÀN HÌNH */}
+      {/* HERO - SÁT NAVBAR */}
       <section style={styles.heroSection}>
         <div style={styles.heroContent}>
           <h1 style={styles.heroTitle}>Khám Phá Thời Trang Tinh Tế</h1>
@@ -196,16 +249,16 @@ const TrangChu = () => {
         </div>
       </section>
 
-      {/* SẢN PHẨM NỔI BẬT - FULL MÀN HÌNH */}
+      {/* SẢN PHẨM NỔI BẬT - TIÊU ĐỀ SÁT GRID */}
       <section style={styles.productSection}>
         <div style={styles.productContainer}>
           <h2 style={styles.sectionTitle}>Sản Phẩm Nổi Bật</h2>
           <div style={styles.sectionUnderline}></div>
 
           {loading ? (
-            <div style={{textAlign:"center", padding:"140px 0", fontSize:"26px", color:"#888"}}>Đang tải sản phẩm...</div>
+            <div style={{textAlign:"center", padding:"100px 0", fontSize:"26px", color:"#888"}}>Đang tải sản phẩm...</div>
           ) : (
-            <div style={styles.productGrid}>
+            <div style={{ ...styles.productGrid, gridTemplateColumns: getGridColumns() }}>
               {featuredProducts.map(product => (
                 <div key={product.id} className="product-card" style={styles.productCard} onClick={() => handleProductClick(product.id)}>
                   <div style={styles.productImageContainer}>

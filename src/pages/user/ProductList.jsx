@@ -1,16 +1,17 @@
+// src/pages/user/SanPham.jsx
 "use client"
 
 import React, { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { getProducts } from "../../api/sanPhamND"
-import { addFavorite, getFavorites, removeFavorite } from "../../api/yeuthich" // Thêm removeFavorite
+import { addFavorite, getFavorites, removeFavorite } from "../../api/yeuthich"
 import { toast } from "react-toastify"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faHeart } from "@fortawesome/free-solid-svg-icons"
 
-const ITEMS_PER_PAGE = 8 // 4 cột × 2 hàng
+const ITEMS_PER_PAGE = 8
 
-const ProductList = () => {
+const SanPham = () => {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [favorites, setFavorites] = useState({})
@@ -20,210 +21,221 @@ const ProductList = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const prodResponse = await getProducts("", null, "asc", 0, 100)
-        const prods = prodResponse.products || []
-        setProducts(prods)
+        const res = await getProducts("", null, "asc", 0, 200)
+        setProducts(res.products || [])
 
-        let favoriteProductIds = {}
         try {
-          const favResponse = await getFavorites()
-          const favList = favResponse.data || favResponse || []
-          favList.forEach(fav => {
-            if (fav.product?.id) favoriteProductIds[fav.product.id] = true
-            else if (fav.id) favoriteProductIds[fav.id] = true
-          })
-        } catch (err) {
-          console.warn("Không lấy được yêu thích", err)
-        }
+          const favRes = await getFavorites()
+          const favList = favRes.data || favRes || []
+          const favIds = {}
+          favList.forEach(f => favIds[f.product?.id || f.id] = true)
+          setFavorites(favIds)
+        } catch (err) { console.warn("Lỗi lấy yêu thích", err) }
 
-        setFavorites(favoriteProductIds)
         setLoading(false)
       } catch (error) {
-        console.error("Lỗi tải dữ liệu:", error)
+        console.error(error)
         setLoading(false)
       }
     }
     fetchData()
   }, [])
 
-  const handleProductClick = (id) => {
-    navigate(`/product/${id}`)
-  }
-
-  const handleToggleWishlist = async (e, productId, productName) => {
+  const handleToggleWishlist = async (e, id) => {
     e.stopPropagation()
-
-    const isCurrentlyFavorited = !!favorites[productId]
-
-    if (isCurrentlyFavorited) {
-      // Đang yêu thích → XÓA
-      try {
-        await removeFavorite(productId)
-        setFavorites(prev => {
-          const newFav = { ...prev }
-          delete newFav[productId]
-          return newFav
-        })
-        toast.success("Đã xóa khỏi yêu thích!", {
-          icon: <FontAwesomeIcon icon={faHeart} style={{ color: "#ff6b9d" }} />,
-        })
-      } catch (err) {
-        toast.error("Không thể xóa khỏi yêu thích!")
+    const isFav = !!favorites[id]
+    try {
+      if (isFav) {
+        await removeFavorite(id)
+        setFavorites(prev => { const n = { ...prev }; delete n[id]; return n })
+        toast.success("Đã xóa khỏi yêu thích!")
+      } else {
+        await addFavorite(id)
+        setFavorites(prev => ({ ...prev, [id]: true }))
+        toast.success("Đã thêm vào yêu thích!")
       }
-    } else {
-      // Chưa yêu thích → THÊM
-      try {
-        await addFavorite(productId)
-        setFavorites(prev => ({ ...prev, [productId]: true }))
-        toast.success("Đã thêm vào yêu thích!", {
-          icon: <FontAwesomeIcon icon={faHeart} style={{ color: "#ff6b9d" }} />,
-        })
-      } catch (err) {
-        const errorMsg = err.response?.data?.message || err.message || ""
-        if (errorMsg.toLowerCase().includes("đã tồn tại") || errorMsg.toLowerCase().includes("yêu thích") || errorMsg.toLowerCase().includes("already") || errorMsg.toLowerCase().includes("duplicate")) {
-          setFavorites(prev => ({ ...prev, [productId]: true }))
-          toast.info("Sản phẩm đã được yêu thích rồi!", {
-            icon: <FontAwesomeIcon icon={faHeart} style={{ color: "#d4a574" }} />,
-          })
-        } else if (errorMsg.toLowerCase().includes("đăng nhập") || errorMsg.toLowerCase().includes("unauthorized")) {
-          toast.error("Vui lòng đăng nhập để thêm yêu thích")
-        } else {
-          toast.error("Không thể thêm vào yêu thích!")
-        }
-      }
+    } catch (err) {
+      toast.error("Có lỗi xảy ra!")
     }
   }
 
+  // Global style + hiệu ứng hover
   useEffect(() => {
     const style = document.createElement("style")
     style.textContent = `
-      .product-list-root { background:#f5f1ed; min-height:100vh; padding-bottom:140px; }
-      .product-list-container { max-width:1600px; margin:0 auto; padding:0 5%; }
-      .product-list-title { font-family:'Georgia', serif; font-size:52px; font-weight:300; color:#2d2d2d; text-align:center; margin:100px 0 80px; }
-
-      .product-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 60px;
-      }
-      @media (max-width: 1400px) { .product-grid { grid-template-columns: repeat(3, 1fr); } }
-      @media (max-width: 1024px) { .product-grid { grid-template-columns: repeat(2, 1fr); } }
-      @media (max-width: 640px) { .product-grid { grid-template-columns: 1fr; } }
-
-      .product-card { 
-        border-radius:24px; overflow:hidden; background:#fff; 
-        box-shadow:0 10px 30px rgba(0,0,0,0.08); transition:all 0.5s ease; position:relative; cursor:pointer;
-      }
-      .product-card:hover { transform:translateY(-12px); box-shadow:0 20px 50px rgba(0,0,0,0.15); }
-
-      .product-image-wrapper { position: relative; overflow:hidden; height:320px; }
-      .product-img { width:100%; height:100%; object-fit:cover; transition:transform 0.8s ease; display:block; }
-      .product-card:hover .product-img { transform:scale(1.08); }
-
-      .product-overlay {
-        position: absolute; inset:0; background:rgba(0,0,0,0); 
-        display:flex; align-items:center; justify-content:center; transition:background 0.4s ease;
-      }
+      html, body, #root { margin:0 !important; padding:0 !important; background:#f5f1ed !important; }
+      .product-card:hover { transform:translateY(-16px); box-shadow:0 25px 50px rgba(0,0,0,0.15); }
+      .product-card:hover .product-image { transform:scale(1.12); }
       .product-card:hover .product-overlay { background:rgba(0,0,0,0.55); }
-
-      .detail-btn {
-        opacity:0; padding:14px 36px; background:#fff; color:#2d2d2d; border:none; border-radius:8px;
-        font-weight:600; font-size:15px; cursor:pointer; transition:all 0.4s ease;
+      .product-card:hover .detail-button { opacity:1; }
+      .btn-small-black, .btn-small-pink {
+        padding:12px 28px !important; border-radius:50px !important; font-size:14px !important; font-weight:600 !important;
+        letter-spacing:1.2px !important; box-shadow:0 6px 18px rgba(0,0,0,0.15) !important; transition:all 0.35s ease !important;
       }
-      .product-card:hover .detail-btn { opacity:1; }
-
-      .product-info { padding:36px; display:flex; flex-direction:column; }
-      .product-name { font-family:'Georgia', serif; font-size:32px; font-weight:300; color:#2d2d2d; margin:0 0 16px 0; flex-grow:1; }
-      .product-price { font-size:28px; color:#d4a574; font-weight:600; margin:0 0 32px 0; }
-
-      .product-buttons { display:flex; gap:20px; margin-top:auto; }
-      .btn-add-cart, .btn-wishlist {
-        flex:1; padding:18px 20px; border:none; border-radius:50px; font-weight:600; 
-        letter-spacing:1.5px; transition:all 0.4s ease; cursor:pointer;
-        display:flex; align-items:center; justify-content:center; gap:10px; font-size:16px;
-      }
-      .btn-add-cart { background:#000; color:#fff; }
-      .btn-add-cart:hover { background:#111; transform:translateY(-4px); box-shadow:0 12px 30px rgba(0,0,0,0.2); }
-      .btn-wishlist { background:linear-gradient(135deg,#ff6b9d,#ff8fb3); color:#fff; }
-      .btn-wishlist:hover { background:linear-gradient(135deg,#ff4f8a,#ff6b9d); transform:translateY(-4px); box-shadow:0 12px 30px rgba(255,107,157,0.4); }
-      .btn-wishlist.favorited { background:linear-gradient(135deg,#d4a574,#e6c9a8); }
-      .btn-wishlist.favorited:hover { background:linear-gradient(135deg,#c49a6c,#d4a574); }
-
-      .pagination { display:flex; justify-content:center; align-items:center; gap:16px; margin-top:100px; flex-wrap:wrap; }
-      .page-btn { width:56px; height:56px; border-radius:50%; border:none; background:#fff; color:#555; font-size:18px; font-weight:600; box-shadow:0 6px 20px rgba(0,0,0,0.1); transition:all 0.3s ease; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-      .page-btn:hover { background:#d4a574; color:#fff; transform:translateY(-4px); }
-      .page-btn.active { background:#d4a574; color:#fff; box-shadow:0 10px 30px rgba(212,165,116,0.4); }
-      .page-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
-      .page-dots { color:#aaa; font-size:24px; padding:0 8px; }
+      .btn-small-black { background:#000 !important; color:#fff !important; }
+      .btn-small-black:hover { background:#111 !important; transform:translateY(-5px) !important; }
+      .btn-small-pink { background:linear-gradient(135deg,#ff6b9d,#ff8fb3) !important; color:#fff !important; display:flex; align-items:center; gap:8px; }
+      .btn-small-pink:hover { background:linear-gradient(135deg,#ff4f8a,#ff6b9d) !important; transform:translateY(-5px) !important; }
+      .btn-small-pink.favorited { background:linear-gradient(135deg,#d4a574,#e6c9a8) !important; }
     `
     document.head.appendChild(style)
     return () => document.head.removeChild(style)
   }, [favorites])
 
   const totalPages = Math.ceil(products.length / ITEMS_PER_PAGE)
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
-  const currentProducts = products.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+  const currentProducts = products.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page)
-    window.scrollTo({ top: 0, behavior: "smooth" })
+  const styles = {
+    root: { backgroundColor: "#f5f1ed", minHeight: "100vh", paddingBottom: "160px" },
+    container: { maxWidth: "1600px", margin: "0 auto", padding: "0 5%" },
+
+    // Tiêu đề TO, ĐẸP, KHÔNG BỊ TÁCH DÒNG
+    title: {
+      fontFamily: "'Georgia', serif",
+      fontSize: "68px",           // To hơn
+      fontWeight: 300,
+      color: "#2d2d2d",
+      textAlign: "center",
+      margin: "30px 0 10px 0",
+      paddingTop: "20px",
+      letterSpacing: "1px",
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis"
+    },
+    underline: { height: "6px", width: "100px", backgroundColor: "#d4a574", margin: "0 auto 60px" },
+
+    grid: { 
+      display: "grid", 
+      gridTemplateColumns: "repeat(4, 1fr)", 
+      gap: "50px", 
+      padding: "0 5%" 
+    },
+
+    card: { 
+      background: "#fff", 
+      borderRadius: "28px", 
+      overflow: "hidden", 
+      boxShadow: "0 12px 35px rgba(0,0,0,0.1)", 
+      transition: "all 0.4s ease",
+      cursor: "pointer"
+    },
+    imageContainer: { 
+      position: "relative", 
+      overflow: "hidden", 
+      aspectRatio: "1", 
+      borderRadius: "28px 28px 0 0"
+    },
+    image: { 
+      width: "100%", 
+      height: "100%", 
+      objectFit: "cover", 
+      transition: "transform 0.7s ease" 
+    },
+    overlay: { 
+      position: "absolute", 
+      inset: 0, 
+      background: "rgba(0,0,0,0)", 
+      display: "flex", 
+      alignItems: "center", 
+      justifyContent: "center", 
+      transition: "0.4s" 
+    },
+    detailButton: { 
+      opacity: 0, 
+      padding: "16px 40px", 
+      background: "#fff", 
+      color: "#2d2d2d", 
+      border: "none", 
+      borderRadius: "12px", 
+      fontWeight: 600, 
+      fontSize: "15px",
+      transition: "0.4s" 
+    },
+
+    info: { padding: "36px 28px", textAlign: "center" },
+    name: { 
+      fontFamily: "'Georgia', serif", 
+      fontSize: "26px", 
+      fontWeight: 300, 
+      marginBottom: "14px", 
+      color: "#2d2d2d",
+      lineHeight: "1.3"
+    },
+    price: { 
+      fontSize: "26px", 
+      fontWeight: 600, 
+      color: "#d4a574", 
+      margin: "0 0 32px 0" 
+    },
+
+    // Nút nhỏ gọn, đẹp hơn
+    buttonContainer: { 
+      display: "flex", 
+      gap: "16px", 
+      justifyContent: "center",
+      flexWrap: "wrap"
+    }
+  }
+
+  // Responsive
+  const getGridCols = () => {
+    if (typeof window === "undefined") return "repeat(4, 1fr)"
+    const w = window.innerWidth
+    if (w <= 640) return "1fr"
+    if (w <= 900) return "repeat(2, 1fr)"
+    if (w <= 1300) return "repeat(3, 1fr)"
+    return "repeat(4, 1fr)"
   }
 
   if (loading) {
     return (
-      <div style={{ background: "#f5f1ed", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
-        <div style={{ fontSize: "32px", color: "#888", marginBottom: "20px" }}>Đang tải sản phẩm...</div>
+      <div style={{ background: "#f5f1ed", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ fontSize: "36px", color: "#888" }}>Đang tải sản phẩm...</div>
       </div>
     )
   }
 
   return (
-    <div className="product-list-root">
-      <div className="product-list-container">
-        <h1 className="product-list-title">Tất Cả Sản Phẩm</h1>
+    <div style={styles.root}>
+      <div style={styles.container}>
+        <h1 style={styles.title}>Tất Cả Sản Phẩm</h1>
+        <div style={styles.underline}></div>
 
-        <div className="product-grid">
-          {currentProducts.map((product) => {
-            const isFavorited = !!favorites[product.id]
-
+        <div style={{ ...styles.grid, gridTemplateColumns: getGridCols() }}>
+          {currentProducts.map(product => {
+            const isFav = !!favorites[product.id]
             return (
-              <div key={product.id} className="product-card" onClick={() => handleProductClick(product.id)}>
-                <div className="product-image-wrapper">
-                  <img
-                    src={`http://localhost:8080${product.hinh}`}
-                    alt={product.ten}
-                    className="product-img"
-                    onError={(e) => (e.target.src = "https://via.placeholder.com/800?text=Ảnh+lỗi")}
+              <div key={product.id} style={styles.card} className="product-card" onClick={() => navigate(`/product/${product.id}`)}>
+                <div style={styles.imageContainer}>
+                  <img 
+                    src={`http://localhost:8080${product.hinh}`} 
+                    alt={product.ten} 
+                    style={styles.image} 
+                    className="product-image"
+                    onError={e => e.target.src = "https://via.placeholder.com/500"}
                   />
-                  <div className="product-overlay">
-                    <button 
-                      className="detail-btn"
-                      onClick={(e) => { e.stopPropagation(); handleProductClick(product.id) }}
-                    >
+                  <div style={styles.overlay} className="product-overlay">
+                    <button style={styles.detailButton} className="detail-button" onClick={e => { e.stopPropagation(); navigate(`/product/${product.id}`) }}>
                       Xem Chi Tiết
                     </button>
                   </div>
                 </div>
 
-                <div className="product-info">
-                  <h3 className="product-name">{product.ten}</h3>
-                  <p className="product-price">
-                    {Number(product.gia).toLocaleString("vi-VN")} đ
-                  </p>
+                <div style={styles.info}>
+                  <h3 style={styles.name}>{product.ten}</h3>
+                  <p style={styles.price}>{Number(product.gia).toLocaleString("vi-VN")} đ</p>
 
-                  <div className="product-buttons">
-                    <button 
-                      className="btn-add-cart" 
-                      onClick={(e) => { e.stopPropagation(); /* TODO: thêm giỏ hàng */ }}
-                    >
-                      Thêm vào Giỏ Hàng
+                  <div style={styles.buttonContainer}>
+                    <button className="btn-small-black" onClick={e => { e.stopPropagation(); /* TODO: giỏ hàng */ }}>
+                      Thêm vào Giỏ
                     </button>
                     <button
-                      className={`btn-wishlist ${isFavorited ? "favorited" : ""}`}
-                      onClick={(e) => handleToggleWishlist(e, product.id, product.ten)}
+                      className={`btn-small-pink ${isFav ? "favorited" : ""}`}
+                      onClick={(e) => handleToggleWishlist(e, product.id)}
                     >
                       <FontAwesomeIcon icon={faHeart} />
-                      {isFavorited ? "Đã Yêu Thích" : "Yêu Thích"}
+                      {isFav ? "Đã Thích" : "Yêu Thích"}
                     </button>
                   </div>
                 </div>
@@ -232,29 +244,25 @@ const ProductList = () => {
           })}
         </div>
 
+        {/* Phân trang gọn đẹp */}
         {totalPages > 1 && (
-          <div className="pagination">
-            <button className="page-btn" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>«</button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-              if (totalPages > 7) {
-                if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
-                  return (
-                    <button key={page} className={`page-btn ${currentPage === page ? "active" : ""}`} onClick={() => handlePageChange(page)}>
-                      {page}
-                    </button>
-                  )
-                } else if (page === currentPage - 2 || page === currentPage + 2) {
-                  return <span key={page} className="page-dots">...</span>
-                }
-                return null
-              }
-              return (
-                <button key={page} className={`page-btn ${currentPage === page ? "active" : ""}`} onClick={() => handlePageChange(page)}>
-                  {page}
-                </button>
-              )
-            })}
-            <button className="page-btn" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}>»</button>
+          <div style={{ display: "flex", justifyContent: "center", gap: "12px", marginTop: "100px", flexWrap: "wrap" }}>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              <button
+                key={page}
+                onClick={() => { setCurrentPage(page); window.scrollTo({ top: 0, behavior: "smooth" }) }}
+                style={{
+                  width: "50px", height: "50px", borderRadius: "50%", border: "none",
+                  background: currentPage === page ? "#d4a574" : "#fff",
+                  color: currentPage === page ? "#fff" : "#555",
+                  fontWeight: 600, fontSize: "16px",
+                  boxShadow: "0 6px 20px rgba(0,0,0,0.1)",
+                  transition: "all 0.3s"
+                }}
+              >
+                {page}
+              </button>
+            ))}
           </div>
         )}
       </div>
@@ -262,4 +270,4 @@ const ProductList = () => {
   )
 }
 
-export default ProductList
+export default SanPham
