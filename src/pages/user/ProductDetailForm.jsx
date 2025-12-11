@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { useParams, Link, useNavigate } from "react-router-dom"
+import { useParams, Link } from "react-router-dom"
 import { getProductById } from "../../api/sanPhamND"
 import { themVaoGiohang } from "../../api/giohang"
 import { addFavorite } from "../../api/yeuthich"
@@ -27,11 +27,11 @@ const getProductReviews = async (productId) => {
 
 const ProductDetailForm = () => {
   const { id } = useParams()
-  const navigate = useNavigate()
   const [product, setProduct] = useState({})
   const [reviews, setReviews] = useState([])
   const [quantity, setQuantity] = useState(1)
   const [loading, setLoading] = useState(true)
+  const [isFavorited, setIsFavorited] = useState(false) // Trạng thái yêu thích
 
   const imageUrl = product.hinh ? `http://localhost:8080${product.hinh}` : "https://via.placeholder.com/800"
 
@@ -63,13 +63,39 @@ const ProductDetailForm = () => {
   }
 
   const handleAddToWishlist = async () => {
+    // Nếu đã yêu thích rồi → thông báo ngay không gọi API
+    if (isFavorited) {
+      toast.info("Sản phẩm đã được yêu thích rồi!", {
+        icon: <FontAwesomeIcon icon={faHeart} style={{ color: "#d4a574" }} />,
+      })
+      return
+    }
+
     try {
       await addFavorite(product.id)
+      setIsFavorited(true) // Cập nhật trạng thái ngay khi thành công
       toast.success("Đã thêm vào yêu thích!", {
-        icon: <FontAwesomeIcon icon={faHeart} style={{color: "#ff6b9d"}} />,
+        icon: <FontAwesomeIcon icon={faHeart} style={{ color: "#ff6b9d" }} />,
       })
     } catch (err) {
-      toast.error(err.message || "Vui lòng đăng nhập để thêm yêu thích")
+      const errorMsg = err.response?.data?.message || err.message || ""
+
+      // Kiểm tra nếu sản phẩm đã tồn tại trong danh sách yêu thích
+      if (
+        errorMsg.toLowerCase().includes("đã tồn tại") ||
+        errorMsg.toLowerCase().includes("yêu thích") ||
+        errorMsg.toLowerCase().includes("already") ||
+        errorMsg.toLowerCase().includes("duplicate")
+      ) {
+        setIsFavorited(true) // Vẫn cập nhật trạng thái để nút đúng
+        toast.error("Sản phẩm đã được yêu thích rồi!", {
+          icon: <FontAwesomeIcon icon={faHeart} style={{ color: "#d4a574" }} />,
+        })
+      } else if (errorMsg.toLowerCase().includes("đăng nhập") || errorMsg.toLowerCase().includes("unauthorized")) {
+        toast.error("Vui lòng đăng nhập để thêm yêu thích")
+      } else {
+        toast.error("Không thể thêm vào yêu thích lúc này. Vui lòng thử lại!")
+      }
     }
   }
 
@@ -81,13 +107,16 @@ const ProductDetailForm = () => {
       .btn-add-cart:hover { background:#111 !important; transform:translateY(-6px); box-shadow:0 16px 32px rgba(0,0,0,0.3); }
       .btn-wishlist { background:linear-gradient(135deg,#ff6b9d,#ff8fb3) !important; color:white !important; box-shadow:0 8px 20px rgba(255,107,157,0.3); transition:all 0.4s ease; }
       .btn-wishlist:hover { background:linear-gradient(135deg,#ff4f8a,#ff6b9d) !important; transform:translateY(-6px); box-shadow:0 16px 32px rgba(255,107,157,0.5); }
+      .btn-wishlist.favorited { background:linear-gradient(135deg,#d4a574,#e6c9a8) !important; opacity:0.95; }
+      .btn-wishlist.favorited:hover { background:linear-gradient(135deg,#c49a6c,#d4a574) !important; }
       .product-image:hover { transform:scale(1.05); }
     `
     document.head.appendChild(style)
     return () => document.head.removeChild(style)
-  }, [])
+  }, [isFavorited])
 
   const styles = {
+    // ... (giữ nguyên tất cả styles cũ của bạn)
     root: { margin:0, padding:0, backgroundColor:"#f5f1ed", width:"100%", minHeight:"100vh", overflowX:"hidden" },
     heroSection: { width:"100%", padding:"100px 5% 80px", background:"linear-gradient(to bottom, #f5f1ed 0%, #f5f1ed 60%, rgba(196,186,175,0.05) 100%)" },
     content: { maxWidth:"1600px", margin:"0 auto", padding:"0 5%" },
@@ -161,8 +190,12 @@ const ProductDetailForm = () => {
                 <button style={styles.btnAddCart} className="btn-add-cart" onClick={handleAddToCart}>
                   Thêm vào Giỏ Hàng
                 </button>
-                <button style={styles.btnWishlist} className="btn-wishlist" onClick={handleAddToWishlist}>
-                  <FontAwesomeIcon icon={faHeart} /> Yêu Thích
+                <button 
+                  style={styles.btnWishlist} 
+                  className={`btn-wishlist ${isFavorited ? 'favorited' : ''}`}
+                  onClick={handleAddToWishlist}
+                >
+                  <FontAwesomeIcon icon={faHeart} /> {isFavorited ? "Đã Yêu Thích" : "Yêu Thích"}
                 </button>
               </div>
             </div>
