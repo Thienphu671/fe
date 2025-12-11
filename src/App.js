@@ -438,7 +438,8 @@ import OrderListPage from './pages/admin/OrderListPage';
 import ThongKeDoanhThu from './pages/admin/ThongKe';
 import ThongKeSPYT from "./pages/admin/TKSPYT"; 
 import ThongKeSPBC from "./pages/admin/TKSPBC"; 
-import ReviewPage from "./pages/admin/ReviewPage"; // Import trang xem đánh giá
+import ReviewPage from "./pages/admin/ReviewPage";
+import ThanhToan from "./pages/user/ThanhToan"; // Import trang xem đánh giá
 
 // Layouts & Components
 import AdminLayout from './pages/admin/AdminLayout';
@@ -507,6 +508,7 @@ function App() {
             <Route path="/donHangND/detail/:id" element={<UserLayout><OrderDetail /></UserLayout>} />
             <Route path="/product/:id" element={<UserLayout><ProductDetailForm /></UserLayout>} />
             <Route path="/giohang" element={<UserLayout><Giohang /></UserLayout>} />
+            <Route path="/thanhtoan" element={<UserLayout><ThanhToan /></UserLayout>} />
             <Route path="/gioiThieu/form" element={<UserLayout><GioiThieu /></UserLayout>} />
             <Route path="/thongtin" element={<UserLayout><UserProfile /></UserLayout>} />
             <Route path="/ThayDoiThongTin" element={<UserLayout><EditProfile /></UserLayout>} />
