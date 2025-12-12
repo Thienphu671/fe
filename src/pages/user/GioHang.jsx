@@ -10,8 +10,9 @@ const GioHang = () => {
   const navigate = useNavigate();
   const [giohang, setGiohang] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedIds, setSelectedIds] = useState([]); // Mảng các id giỏ hàng được chọn
+  const [selectedIds, setSelectedIds] = useState([]); // các id giỏ hàng được chọn
 
+  // Tải giỏ hàng khi vào trang
   useEffect(() => {
     fetchGiohang();
   }, []);
@@ -21,23 +22,23 @@ const GioHang = () => {
       const response = await getGiohang();
       const data = response.data || [];
       setGiohang(data);
-      setSelectedIds([]); // Reset khi tải lại
+      setSelectedIds([]); // reset chọn
     } catch (error) {
       console.error("Lỗi tải giỏ hàng:", error);
-      alert("Không thể tải giỏ hàng!");
+      alert("Không thể tải giỏ hàng! Vui lòng đăng nhập lại.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Chọn/bỏ chọn 1 sản phẩm
+  // Chọn / bỏ chọn 1 sản phẩm
   const toggleSelect = (id) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
   };
 
-  // Chọn/bỏ tất cả
+  // Chọn / bỏ chọn tất cả
   const toggleSelectAll = () => {
     if (selectedIds.length === giohang.length) {
       setSelectedIds([]);
@@ -61,12 +62,12 @@ const GioHang = () => {
         )
       );
     } catch (error) {
-      alert("Cập nhật số lượng thất bại!");
+      alert("Cập nhật số lượng thất bại! Tải lại giỏ hàng...");
       fetchGiohang();
     }
   };
 
-  // Xóa sản phẩm
+  // Xóa sản phẩm khỏi giỏ
   const handleXoa = async (sanphamId, giohangId) => {
     if (!window.confirm("Xóa sản phẩm này khỏi giỏ hàng?")) return;
 
@@ -82,11 +83,7 @@ const GioHang = () => {
   // Tính tổng tiền các sản phẩm được chọn
   const tongTienChon = giohang
     .filter((item) => selectedIds.includes(item.id))
-    .reduce((sum, item) => {
-      const price = Number(item.totalPrice) || 0;
-      const qty = Number(item.quantity) || 1;
-      return sum + price * qty;
-    }, 0);
+    .reduce((sum, item) => sum + Number(item.totalPrice || 0), 0);
 
   // Chuyển sang trang thanh toán
   const handleThanhToan = () => {
@@ -95,17 +92,19 @@ const GioHang = () => {
       return;
     }
 
-    const selectedItems = giohang.filter((item) => selectedIds.includes(item.id));
+    const selectedItems = giohang.filter((item) =>
+      selectedIds.includes(item.id)
+    );
 
     navigate("/thanhtoan", {
       state: {
-        selectedItems,    // Danh sách sản phẩm để hiển thị
-        selectedIds,      // IDs để gửi lên backend
-        tongTien: tongTienChon
+        selectedItems,
+        tongTien: tongTienChon,
       },
     });
   };
 
+  // Loading
   if (loading) {
     return (
       <div className="container text-center py-5">
@@ -117,6 +116,7 @@ const GioHang = () => {
     );
   }
 
+  // Giỏ hàng rỗng
   if (giohang.length === 0) {
     return (
       <div className="container text-center py-5">
@@ -153,9 +153,6 @@ const GioHang = () => {
           </thead>
           <tbody>
             {giohang.map((item) => {
-              const price = Number(item.totalPrice) || 0;
-              const qty = Number(item.quantity) || 1;
-              const thanhTien = price * qty;
               const isChecked = selectedIds.includes(item.id);
 
               return (
@@ -165,6 +162,7 @@ const GioHang = () => {
                     backgroundColor: isChecked ? "#f0fff0" : "transparent",
                   }}
                 >
+                  {/* Checkbox */}
                   <td>
                     <input
                       type="checkbox"
@@ -172,43 +170,61 @@ const GioHang = () => {
                       onChange={() => toggleSelect(item.id)}
                     />
                   </td>
+
+                  {/* Ảnh */}
                   <td>
                     <img
                       src={
-                        item.product?.hinh
-                          ? `http://localhost:8080/uploads/${item.product.hinh}`
-                          : "https://via.placeholder.com/80"
+                        item.hinhAnh
+                          ? `http://localhost:8080/uploads/${item.hinhAnh}`
+                          : "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/No-Image-Placeholder.svg/495px-No-Image-Placeholder.svg.png"
                       }
-                      alt={item.product?.ten || "Sản phẩm"}
+                      alt={item.tenSanPham}
                       width="80"
                       height="80"
                       style={{ objectFit: "cover", borderRadius: "8px" }}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/No-Image-Placeholder.svg/495px-No-Image-Placeholder.svg.png";
+                      }}
                     />
                   </td>
+
+                  {/* Tên sản phẩm */}
                   <td>
-                    <strong>{item.product?.ten || "Không tên"}</strong>
+                    <strong>{item.tenSanPham || "Không tên"}</strong>
                   </td>
-                  <td>{price.toLocaleString("vi-VN")}₫</td>
+
+                  {/* Đơn giá */}
+                  <td>
+                    {Number(item.giaSanPham).toLocaleString("vi-VN")}₫
+                  </td>
+
+                  {/* Số lượng */}
                   <td>
                     <input
                       type="number"
                       min="1"
                       className="form-control form-control-sm"
                       style={{ width: "80px" }}
-                      value={qty}
+                      value={item.quantity || 1}
                       onChange={(e) => {
                         const val = parseInt(e.target.value) || 1;
                         handleCapNhatSoLuong(item.id, val);
                       }}
                     />
                   </td>
+
+                  {/* Thành tiền */}
                   <td className="fw-bold text-danger">
-                    {thanhTien.toLocaleString("vi-VN")}₫
+                    {Number(item.totalPrice).toLocaleString("vi-VN")}₫
                   </td>
+
+                  {/* Xóa */}
                   <td>
                     <button
                       className="btn btn-danger btn-sm"
-                      onClick={() => handleXoa(item.product.id, item.id)}
+                      onClick={() => handleXoa(item.sanphamId, item.id)}
                     >
                       Xóa
                     </button>
