@@ -6,23 +6,33 @@ import { getProducts } from "../../api/sanPhamND"
 import { addFavorite, getFavorites, removeFavorite } from "../../api/yeuthich"
 import { toast } from "react-toastify"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faHeart } from "@fortawesome/free-solid-svg-icons"
+import { faHeart, faSearch } from "@fortawesome/free-solid-svg-icons"
 
 const ITEMS_PER_PAGE = 9
 
 const SanPham = () => {
-  const [products, setProducts] = useState([])
+  const [allProducts, setAllProducts] = useState([]) // dữ liệu gốc
+  const [products, setProducts] = useState([])        // dữ liệu sau tìm kiếm
   const [loading, setLoading] = useState(true)
   const [favorites, setFavorites] = useState({})
   const [currentPage, setCurrentPage] = useState(1)
+
+  // State cho tìm kiếm theo tên
+  const [searchTerm, setSearchTerm] = useState("")
+
   const navigate = useNavigate()
 
+  // Load dữ liệu sản phẩm + yêu thích
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Lấy tất cả sản phẩm (lấy nhiều để lọc client-side)
         const res = await getProducts("", null, "asc", 0, 300)
-        setProducts(res.products || [])
+        const productList = res.products || []
+        setAllProducts(productList)
+        setProducts(productList)
 
+        // Lấy danh sách yêu thích
         const favRes = await getFavorites()
         const favList = favRes.data || favRes || []
         const favIds = {}
@@ -37,6 +47,21 @@ const SanPham = () => {
     }
     fetchData()
   }, [])
+
+  // Xử lý tìm kiếm theo tên khi searchTerm thay đổi
+  useEffect(() => {
+    let filtered = allProducts
+
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      filtered = filtered.filter(p =>
+        p.ten.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(term)
+      )
+    }
+
+    setProducts(filtered)
+    setCurrentPage(1) // reset về trang 1 khi tìm kiếm
+  }, [searchTerm, allProducts])
 
   const handleToggleWishlist = async (e, id) => {
     e.stopPropagation()
@@ -61,7 +86,7 @@ const SanPham = () => {
     }
   }
 
-  // CSS – ĐÃ FIX HOÀN TOÀN: hiện "Xem Chi Tiết" khi hover
+  // Hover effect CSS
   useEffect(() => {
     const style = document.createElement("style")
     style.textContent = `
@@ -69,17 +94,14 @@ const SanPham = () => {
       .product-card:hover { transform: translateY(-16px); box-shadow: 0 25px 50px rgba(0,0,0,0.15); }
       .product-card:hover .product-image { transform: scale(1.1); }
       .product-card:hover .product-overlay { background: rgba(0,0,0,0.55); }
-      
-      /* Dòng QUAN TRỌNG NHẤT – bật hiển thị nút Xem Chi Tiết */
       .product-card:hover .detail-btn { opacity: 1 !important; }
-
       .fav-btn:hover, .fav-btn.favorited { background:#d4a574 !important; color:white !important; border-color:#d4a574 !important; }
     `
     document.head.appendChild(style)
     return () => document.head.removeChild(style)
   }, [])
 
-  // ======== PHÂN TRANG CLIENT-SIDE ========
+  // Phân trang
   const totalPages = Math.ceil(products.length / ITEMS_PER_PAGE)
   const currentProducts = products.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
@@ -89,7 +111,6 @@ const SanPham = () => {
   const getVisiblePages = () => {
     const pages = []
     const maxVisible = 5
-
     if (totalPages <= maxVisible) {
       for (let i = 1; i <= totalPages; i++) pages.push(i)
     } else {
@@ -111,9 +132,39 @@ const SanPham = () => {
 
   const styles = {
     root: { margin:0, padding:0, backgroundColor:"#f5f1ed", minHeight:"100vh" },
-    header: { padding:"10px 20px 80px", textAlign:"center" },
+    header: { padding:"10px 20px 40px", textAlign:"center" },
     title: { fontFamily:"'Georgia', serif", fontSize:"52px", fontWeight:300, color:"#2d2d2d", margin:"0 0 20px 0" },
-    underline: { height:"5px", width:"90px", backgroundColor:"#d4a574", margin:"0 auto 60px" },
+    underline: { height:"5px", width:"90px", backgroundColor:"#d4a574", margin:"0 auto 40px" },
+
+    // Chỉ còn thanh tìm kiếm
+    filterBar: { 
+      display: "flex", 
+      justifyContent: "center", 
+      marginBottom: "50px",
+      padding: "0 20px"
+    },
+    searchBox: { 
+      position: "relative", 
+      maxWidth: "500px", 
+      width: "100%"
+    },
+    searchInput: { 
+      width: "100%", 
+      padding: "16px 60px 16px 24px", 
+      borderRadius: "12px", 
+      border: "2px solid #ddd", 
+      fontSize: "18px",
+      outline: "none",
+      boxShadow: "0 4px 15px rgba(0,0,0,0.05)"
+    },
+    searchIcon: { 
+      position: "absolute", 
+      right: "20px", 
+      top: "50%", 
+      transform: "translateY(-50%)", 
+      color: "#999",
+      fontSize: "20px"
+    },
 
     grid: {
       display:"grid",
@@ -151,10 +202,10 @@ const SanPham = () => {
       gap:"10px"
     },
 
-    loading: { textAlign:"center", padding:"150px 0", fontSize:"28px", color:"#888" }
+    loading: { textAlign:"center", padding:"150px 0", fontSize:"28px", color:"#888" },
+    resultInfo: { textAlign:"center", color:"#666", margin:"20px 0 40px", fontSize:"17px", fontWeight:"500" }
   }
 
-  // Responsive grid
   const gridStyle = {
     ...styles.grid,
     gridTemplateColumns:
@@ -173,62 +224,88 @@ const SanPham = () => {
         <div style={styles.underline}></div>
       </div>
 
-      <div style={gridStyle}>
-        {currentProducts.map(product => {
-          const isFav = !!favorites[product.id]
-          return (
-            <div
-              key={product.id}
-              className="product-card"
-              style={styles.card}
-              onClick={() => navigate(`/product/${product.id}`)}
-            >
-              <div style={styles.imgBox}>
-                <img
-                  src={`http://localhost:8080${product.hinh}`}
-                  alt={product.ten}
-                  style={styles.img}
-                  className="product-image"
-                  onError={e => e.target.src = "https://via.placeholder.com/400x400/f5f1ed/999?text=No+Image"}
-                />
-                {/* Overlay + nút Xem Chi Tiết */}
-                <div style={styles.overlay} className="product-overlay">
-                  <button
-                    style={styles.detailBtn}
-                    className="detail-btn"
-                    onClick={e => { e.stopPropagation(); navigate(`/product/${product.id}`) }}
-                  >
-                    Xem Chi Tiết
-                  </button>
-                </div>
-              </div>
-
-              <div style={styles.info}>
-                <h3 style={styles.name}>{product.ten}</h3>
-                <p style={styles.price}>{Number(product.gia).toLocaleString("vi-VN")} đ</p>
-
-                <div style={styles.actions}>
-                  <button
-                    style={{
-                      ...styles.favBtn,
-                      background: isFav ? "#d4a574" : "transparent",
-                      color: isFav ? "white" : "#2d2d2d",
-                      borderColor: isFav ? "#d4a574" : "#2d2d2d"
-                    }}
-                    className={`fav-btn ${isFav ? "favorited" : ""}`}
-                    onClick={e => handleToggleWishlist(e, product.id)}
-                  >
-                    <FontAwesomeIcon icon={faHeart} />
-                    {isFav ? " Đã yêu thích" : " Yêu Thích"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )
-        })}
+      {/* Chỉ còn thanh tìm kiếm */}
+      <div style={styles.filterBar}>
+        <div style={styles.searchBox}>
+          <input
+            type="text"
+            placeholder="Tìm kiếm sản phẩm..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={styles.searchInput}
+          />
+          <FontAwesomeIcon icon={faSearch} style={styles.searchIcon} />
+        </div>
       </div>
 
-      {/* PHÂN TRANG – giữ nguyên đẹp như cũ */}
+      {/* Thông báo kết quả tìm kiếm */}
+      <p style={styles.resultInfo}>
+        Hiển thị <strong>{products.length}</strong> sản phẩm
+        {searchTerm && ` cho từ khóa "${searchTerm}"`}
+      </p>
+
+      {/* Grid sản phẩm */}
+      {products.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "100px 20px", color: "#888", fontSize: "20px" }}>
+          Không tìm thấy sản phẩm nào phù hợp.
+        </div>
+      ) : (
+        <div style={gridStyle}>
+          {currentProducts.map(product => {
+            const isFav = !!favorites[product.id]
+            return (
+              <div
+                key={product.id}
+                className="product-card"
+                style={styles.card}
+                onClick={() => navigate(`/product/${product.id}`)}
+              >
+                <div style={styles.imgBox}>
+                  <img
+                    src={`http://localhost:8080${product.hinh}`}
+                    alt={product.ten}
+                    style={styles.img}
+                    className="product-image"
+                    onError={e => e.target.src = "https://via.placeholder.com/400x400/f5f1ed/999?text=No+Image"}
+                  />
+                  <div style={styles.overlay} className="product-overlay">
+                    <button
+                      style={styles.detailBtn}
+                      className="detail-btn"
+                      onClick={e => { e.stopPropagation(); navigate(`/product/${product.id}`) }}
+                    >
+                      Xem Chi Tiết
+                    </button>
+                  </div>
+                </div>
+
+                <div style={styles.info}>
+                  <h3 style={styles.name}>{product.ten}</h3>
+                  <p style={styles.price}>{Number(product.gia).toLocaleString("vi-VN")} đ</p>
+
+                  <div style={styles.actions}>
+                    <button
+                      style={{
+                        ...styles.favBtn,
+                        background: isFav ? "#d4a574" : "transparent",
+                        color: isFav ? "white" : "#2d2d2d",
+                        borderColor: isFav ? "#d4a574" : "#2d2d2d"
+                      }}
+                      className={`fav-btn ${isFav ? "favorited" : ""}`}
+                      onClick={e => handleToggleWishlist(e, product.id)}
+                    >
+                      <FontAwesomeIcon icon={faHeart} />
+                      {isFav ? " Đã yêu thích" : " Yêu Thích"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Phân trang */}
       {totalPages > 1 && (
         <>
           <p style={{ textAlign:"center", color:"#666", margin:"0 0 30px", fontSize:"16px" }}>
@@ -244,18 +321,8 @@ const SanPham = () => {
             flexWrap:"wrap",
             padding:"0 20px"
           }}>
-            <button
-              onClick={() => changePage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              style={{
-                minWidth:"50px", height:"50px", borderRadius:"50%", border:"none",
-                background: currentPage === 1 ? "#eee" : "#fff",
-                color: currentPage === 1 ? "#aaa" : "#555",
-                fontSize:"18px", fontWeight:600,
-                boxShadow:"0 6px 20px rgba(0,0,0,0.1)",
-                cursor: currentPage === 1 ? "not-allowed" : "pointer"
-              }}
-            >
+            <button onClick={() => changePage(Math.max(1, currentPage - 1))} disabled={currentPage === 1}
+              style={{ minWidth:"50px", height:"50px", borderRadius:"50%", border:"none", background: currentPage === 1 ? "#eee" : "#fff", color: currentPage === 1 ? "#aaa" : "#555", fontSize:"18px", fontWeight:600, boxShadow:"0 6px 20px rgba(0,0,0,0.1)", cursor: currentPage === 1 ? "not-allowed" : "pointer" }}>
               ←
             </button>
 
@@ -263,36 +330,15 @@ const SanPham = () => {
               page === "..." ? (
                 <span key={idx} style={{ color:"#999", fontSize:"22px", padding:"0 8px" }}>...</span>
               ) : (
-                <button
-                  key={page}
-                  onClick={() => changePage(page)}
-                  style={{
-                    width:"50px", height:"50px", borderRadius:"50%", border:"none",
-                    background: currentPage === page ? "#d4a574" : "#fff",
-                    color: currentPage === page ? "#fff" : "#555",
-                    fontWeight:600, fontSize:"16px",
-                    boxShadow:"0 6px 20px rgba(0,0,0,0.1)",
-                    cursor:"pointer",
-                    transition:"all 0.3s"
-                  }}
-                >
+                <button key={page} onClick={() => changePage(page)}
+                  style={{ width:"50px", height:"50px", borderRadius:"50%", border:"none", background: currentPage === page ? "#d4a574" : "#fff", color: currentPage === page ? "#fff" : "#555", fontWeight:600, fontSize:"16px", boxShadow:"0 6px 20px rgba(0,0,0,0.1)", cursor:"pointer", transition:"all 0.3s" }}>
                   {page}
                 </button>
               )
             )}
 
-            <button
-              onClick={() => changePage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage === totalPages}
-              style={{
-                minWidth:"50px", height:"50px", borderRadius:"50%", border:"none",
-                background: currentPage === totalPages ? "#eee" : "#fff",
-                color: currentPage === totalPages ? "#aaa" : "#555",
-                fontSize:"18px", fontWeight:600,
-                boxShadow:"0 6px 20px rgba(0,0,0,0.1)",
-                cursor: currentPage === totalPages ? "not-allowed" : "pointer"
-              }}
-            >
+            <button onClick={() => changePage(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages}
+              style={{ minWidth:"50px", height:"50px", borderRadius:"50%", border:"none", background: currentPage === totalPages ? "#eee" : "#fff", color: currentPage === totalPages ? "#aaa" : "#555", fontSize:"18px", fontWeight:600, boxShadow:"0 6px 20px rgba(0,0,0,0.1)", cursor: currentPage === totalPages ? "not-allowed" : "pointer" }}>
               →
             </button>
           </div>

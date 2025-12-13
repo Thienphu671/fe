@@ -63,6 +63,35 @@ export const getProductById = async (id) => {
     }
 };
 
+// === THÊM MỚI: LẤY DANH SÁCH DANH MỤC ===
+export const getCategories = async () => {
+    try {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+            throw new Error("Token không tồn tại. Vui lòng đăng nhập lại.");
+        }
+
+        const response = await axios.get(`${API_BASE_URL}/danhMuc`, {
+            headers: {
+                "Authorization": `Bearer ${token}`,
+            },
+        });
+
+        if (response.status === 200) {
+            // Giả sử backend trả về { categories: [...] } hoặc trực tiếp là mảng
+            const categories = response.data.categories || response.data;
+            console.log("Danh mục nhận được:", categories);
+            return { categories }; // Trả về định dạng giống fetchCategories ở admin
+        } else {
+            throw new Error(`Lỗi khi lấy danh mục: ${response.statusText}`);
+        }
+    } catch (error) {
+        console.error("Có lỗi khi lấy danh mục:", error);
+        throw error;
+    }
+};
+
 // Hàm để tải danh sách sản phẩm
 export const loadProducts = async () => {
     const page = 0; // Trang đầu tiên
