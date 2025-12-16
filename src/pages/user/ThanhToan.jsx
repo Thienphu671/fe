@@ -15,7 +15,14 @@ const ThanhToan = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const { selectedItems = [], tongTien = 0 } = state || {};
+  // Lấy cả selectedItems và tongTien từ state
+  // Nếu có selectedIds thì ưu tiên dùng, nếu không thì lấy id từ selectedItems
+  const { selectedItems = [], selectedIds = [], tongTien = 0 } = state || {};
+
+  // Nếu không có selectedIds, tự tạo từ selectedItems
+  const giohangIds = selectedIds.length > 0 
+    ? selectedIds 
+    : selectedItems.map(item => item.id || item.gioHangId).filter(id => id);
 
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -39,34 +46,73 @@ const ThanhToan = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!diaChi.trim()) return setError("Vui lòng nhập địa chỉ giao hàng!");
-    if (!sdt.trim()) return setError("Vui lòng nhập số điện thoại!");
+
+    if (!diaChi.trim()) {
+      return setError("Vui lòng nhập địa chỉ giao hàng!");
+    }
+    if (!sdt.trim()) {
+      return setError("Vui lòng nhập số điện thoại!");
+    }
+    if (giohangIds.length === 0) {
+      return setError("Không có sản phẩm nào được chọn để thanh toán!");
+    }
 
     setLoading(true);
     setError("");
+
     try {
       const token = localStorage.getItem("token");
-      await axios.post("http://localhost:8080/api/orders/create-from-cart", {
-        diaChi: diaChi.trim(),
-        sdt: sdt.trim()
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+
+      await axios.post(
+        "http://localhost:8080/api/orders/create-from-cart",
+        {
+          giohangIds: giohangIds,   // ← Quan trọng: gửi danh sách ID giỏ hàng
+          diaChi: diaChi.trim(),
+          sdt: sdt.trim(),
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
 
       alert("Đặt hàng thành công! Cảm ơn bạn đã mua sắm tại Shop Thời Trang");
       navigate("/donhang");
     } catch (err) {
-      setError(err.response?.data || "Đặt hàng thất bại! Vui lòng thử lại.");
+      console.error("Lỗi đặt hàng:", err);
+      setError(
+        err.response?.data?.message || 
+        err.response?.data || 
+        "Đặt hàng thất bại! Vui lòng thử lại."
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  if (selectedItems.length === 0) {
+  // Nếu không có sản phẩm nào được chọn
+  if (selectedItems.length === 0 || giohangIds.length === 0) {
     return (
-      <div style={{ background: "#f5f1ed", minHeight: "100vh", padding: "100px 20px", textAlign: "center" }}>
-        <h2 style={{ fontFamily: "'Georgia', serif", fontSize: "36px", color: "#2d2d2d" }}>Không có sản phẩm để thanh toán!</h2>
-        <button onClick={() => navigate("/giohang")} style={{ marginTop: "20px", padding: "14px 40px", background: "#d4a574", color: "white", border: "none", borderRadius: "12px", fontSize: "16px", fontWeight: 600, cursor: "pointer" }}>
+<div style={{ background: "#f5f1ed", minHeight: "100vh", padding: "100px 20px", textAlign: "center" }}>
+        <h2 style={{ fontFamily: "'Georgia', serif", fontSize: "36px", color: "#2d2d2d" }}>
+          Không có sản phẩm để thanh toán!
+        </h2>
+        <p style={{ fontSize: "18px", color: "#666", margin: "20px 0" }}>
+          Vui lòng chọn sản phẩm trong giỏ hàng trước khi thanh toán.
+        </p>
+        <button
+          onClick={() => navigate("/giohang")}
+          style={{
+            marginTop: "20px",
+            padding: "14px 40px",
+            background: "#d4a574",
+            color: "white",
+            border: "none",
+            borderRadius: "12px",
+            fontSize: "16px",
+            fontWeight: 600,
+            cursor: "pointer"
+          }}
+        >
           Quay lại giỏ hàng
         </button>
       </div>
@@ -75,13 +121,11 @@ const ThanhToan = () => {
 
   return (
     <div style={{ background: "#f5f1ed", minHeight: "100vh", padding: "40px 0" }}>
-      {/* Reset toàn bộ khoảng trắng */}
       <style jsx>{`
         html, body, #root { margin:0; padding:0; background:#f5f1ed; }
       `}</style>
 
       <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 20px" }}>
-        {/* Tiêu đề */}
         <div style={{ textAlign: "center", marginBottom: "50px" }}>
           <h1 style={{ fontFamily: "'Georgia', serif", fontSize: "48px", fontWeight: 300, color: "#2d2d2d", margin: "0 0 16px" }}>
             Xác Nhận Đơn Hàng
@@ -98,21 +142,30 @@ const ThanhToan = () => {
             <div style={{ maxHeight: "500px", overflowY: "auto", paddingRight: "10px" }}>
               {selectedItems.map((item, index) => {
                 const ten = item.product?.ten || item.tenSanPham || "Sản phẩm";
-                const gia = Number(item.giaSanPham || item.totalPrice);
+                const gia = Number(item.giaSanPham || item.totalPrice || item.product?.gia);
                 const sl = Number(item.quantity || 1);
                 const thanhTien = gia * sl;
 
                 return (
-                  <div key={item.id || index} style={{
-                    display: "grid",
-                    gridTemplateColumns: "100px 1fr 120px 140px",
-                    gap: "20px",
-                    padding: "20px 0",
-                    borderBottom: index === selectedItems.length - 1 ? "none" : "1px solid #eee",
-                    alignItems: "center"
-                  }}>
+                  <div
+                    key={item.id || index}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "100px 1fr 120px 140px",
+                      gap: "20px",
+                      padding: "20px 0",
+                      borderBottom: index === selectedItems.length - 1 ? "none" : "1px solid #eee",
+                      alignItems: "center"
+                    }}
+                  >
                     <img
-                      src={item.hinhAnh ? `http://localhost:8080/uploads/${item.hinhAnh}` : "https://via.placeholder.com/400x400/f5f1ed/999?text=No+Image"}
+src={
+                        item.hinhAnh
+                          ? `http://localhost:8080/uploads/${item.hinhAnh}`
+                          : item.product?.hinh
+                          ? `http://localhost:8080/uploads/${item.product.hinh}`
+                          : "https://via.placeholder.com/400x400/f5f1ed/999?text=No+Image"
+                      }
                       alt={ten}
                       style={{ width: "90px", height: "90px", objectFit: "cover", borderRadius: "14px", boxShadow: "0 4px 15px rgba(0,0,0,0.1)" }}
                     />
@@ -132,7 +185,6 @@ const ThanhToan = () => {
               })}
             </div>
 
-            {/* Tổng tiền lớn */}
             <div style={{ marginTop: "30px", padding: "24px", background: "#faf6f2", borderRadius: "16px", textAlign: "right" }}>
               <div style={{ fontSize: "28px", color: "#2d2d2d", fontWeight: 600 }}>
                 Tổng thanh toán:
@@ -143,7 +195,7 @@ const ThanhToan = () => {
             </div>
           </div>
 
-          {/* Form thanh toán */}
+          {/* Form thông tin giao hàng */}
           <div style={{
             background: "#fff",
             borderRadius: "24px",
@@ -171,7 +223,7 @@ const ThanhToan = () => {
                   style={{
                     width: "100%",
                     padding: "16px 20px",
-                    border: "2px solid #ddd",
+border: "2px solid #ddd",
                     borderRadius: "14px",
                     fontSize: "16px",
                     outline: "none",
@@ -180,6 +232,7 @@ const ThanhToan = () => {
                   onFocus={(e) => e.target.style.borderColor = "#d4a574"}
                   onBlur={(e) => e.target.style.borderColor = "#ddd"}
                   required
+                  disabled={loading}
                 />
               </div>
 
@@ -206,6 +259,7 @@ const ThanhToan = () => {
                   onFocus={(e) => e.target.style.borderColor = "#d4a574"}
                   onBlur={(e) => e.target.style.borderColor = "#ddd"}
                   required
+                  disabled={loading}
                 />
               </div>
 
@@ -243,7 +297,7 @@ const ThanhToan = () => {
                     <FontAwesomeIcon icon={faCheckCircle} />
                     XÁC NHẬN ĐẶT HÀNG
                   </>
-                )}
+)}
               </button>
             </form>
 

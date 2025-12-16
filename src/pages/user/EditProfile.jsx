@@ -1,256 +1,218 @@
-"use client"
 
-import React, { useEffect, useState } from "react"
-import axios from "axios"
-import { useNavigate } from "react-router-dom"
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faUser, faPhone, faEnvelope, faEdit, faHome, faSignOutAlt } from "@fortawesome/free-solid-svg-icons"
 
-const ThongTinCaNhan = () => {
-  const navigate = useNavigate()
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const EditProfile = () => {
+  const [user, setUser] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const [formData, setFormData] = useState({
+    email: '',
+    fullname: '',
+    phone: '',
+    photo: null,
+  });
+  const [message, setMessage] = useState({ type: '', content: '' });
 
   useEffect(() => {
-    const token = localStorage.getItem("token")
-    if (!token) {
-      navigate("/auth/login")
-      return
+    const token = localStorage.getItem('token'); // Lấy token từ localStorage
+
+    // Gọi API để lấy thông tin người dùng
+    axios.get('http://localhost:8080/api/thongtin', {
+      headers: {
+        Authorization: `Bearer ${token}`, // Gửi token trong header
+      },
+    })
+      .then(res => {
+        const data = res.data;
+        setUser(data);
+        setFormData({
+          email: data.email,
+          fullname: data.fullname,
+          phone: data.phoneNumber,
+          photo: null,
+        });
+        setPhotoPreview(data.photo ? `http://localhost:8080/uploads/${data.photo}` : '/images/default-avatar.png');
+      })
+      .catch(err => {
+        console.error(err);
+        setMessage({ type: 'error', content: 'Không thể tải thông tin người dùng' });
+      });
+  }, []);
+
+  const handleChange = (e) => {
+    const { name, value, files } = e.target;
+    if (name === 'photo') {
+      const file = files[0];
+      if (file && file.size > 2 * 1024 * 1024) {
+        alert('Ảnh phải nhỏ hơn 2MB!');
+        return;
+      }
+      setFormData({ ...formData, photo: file });
+      setPhotoPreview(URL.createObjectURL(file));
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const token = localStorage.getItem('token'); // Lấy token từ localStorage
+
+    const data = new FormData();
+    data.append('email', formData.email);
+    data.append('fullname', formData.fullname);
+    data.append('phone', formData.phone);
+    if (formData.photo) {
+      data.append('photo', formData.photo);
     }
 
-    axios
-      .get("http://localhost:8080/api/thongtin", {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => {
-        setUser(res.data)
-        setLoading(false)
-      })
-      .catch((err) => {
-        console.error(err)
-        setLoading(false)
-      })
-  }, [navigate])
-
-  // RESET MẠNH NHẤT CÓ THỂ – SÁT NAVBAR 100%
-  useEffect(() => {
-    const style = document.createElement("style")
-    style.textContent = `
-      /* RESET TỔNG LỰC – KHÔNG CHO PHÉP BẤT KỲ KHOẢNG TRẮNG NÀO */
-      html, body, #root, div, section, .profile-page, .profile-page * {
-        margin: 0 !important;
-        padding: 0 !important;
-        box-sizing: border-box !important;
-      }
-
-      body, #root, .profile-page {
-        background: #f5f1ed !important;
-        min-height: 100vh !important;
-        width: 100% !important;
-        overflow-x: hidden !important;
-      }
-
-      /* XÓA HẾT KHOẢNG TRẮNG TỪ LAYOUT CHUNG */
-      .container, .container-fluid, [class*="container"], main, .App, .layout {
-        margin: 0 !important;
-        padding: 0 !important;
-        max-width: 100% !important;
-      }
-
-      /* ĐẨY NỘI DUNG LÊN SÁT NAVBAR */
-      .profile-page > div:first-child,
-      .profile-header {
-        margin-top: 0 !important;
-        padding-top: 30px !important;
-      }
-    `
-    document.head.appendChild(style)
-    return () => document.head.removeChild(style)
-  }, [])
-
-  if (loading) {
-    return (
-      <div className="profile-page" style={{ background: "#f5f1ed", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ fontSize: "28px", color: "#888" }}>Đang tải thông tin...</div>
-      </div>
-    )
-  }
-
-  if (!user) return null
+    try {
+      const response = await axios.post('http://localhost:8080/api/thayDoiThongTin', data, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`, // Gửi token trong header
+        },
+      });
+      setMessage({ type: 'success', content: 'Cập nhật thành công!' });
+    } catch (error) {
+      console.error(error);
+      const errorMsg = error.response?.data?.message || 'Đã có lỗi xảy ra';
+      setMessage({ type: 'error', content: errorMsg });
+    }
+  };
 
   return (
-    <div className="profile-page">
-      {/* Tiêu đề sát navbar */}
-      <div style={{ textAlign: "center", padding: "30px 20px 50px" }}>
-        <h1 style={{
-          fontFamily: "'Georgia', serif",
-          fontSize: "52px",
-          fontWeight: 300,
-          color: "#2d2d2d",
-          margin: "0 0 20px 0"
-        }}>
-          Thông Tin Cá Nhân
-        </h1>
-        <div style={{ height: "5px", width: "90px", background: "#d4a574", margin: "0 auto" }}></div>
-      </div>
+    <div style={styles.container}>
+      <h2><i className="fas fa-user-edit"></i> Thay đổi thông tin cá nhân</h2>
 
-      {/* Khung chính */}
-      <div style={{ maxWidth: "680px", margin: "0 auto", padding: "0 20px" }}>
-        <div style={{
-          background: "#fff",
-          borderRadius: "32px",
-          overflow: "hidden",
-          boxShadow: "0 30px 80px rgba(0,0,0,0.18)",
-          padding: "70px 60px",
-          textAlign: "center"
-        }}>
-          {/* Avatar */}
-          <div style={{ marginBottom: "50px", position: "relative", display: "inline-block" }}>
-            <img
-              src={user.photo ? `http://localhost:8080/uploads/${user.photo}` : "https://via.placeholder.com/220/f5f1ed/999?text=AVT"}
-              alt="Avatar"
-              style={{
-                width: "220px",
-                height: "220px",
-                borderRadius: "50%",
-                objectFit: "cover",
-                border: "12px solid #d4a574",
-                boxShadow: "0 25px 60px rgba(212,165,116,0.5)"
-              }}
-            />
-            <div style={{
-              position: "absolute",
-              bottom: "12px",
-              right: "12px",
-              background: "#d4a574",
-              color: "white",
-              width: "56px",
-              height: "56px",
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "24px",
-              boxShadow: "0 10px 25px rgba(212,165,116,0.6)"
-            }}>
-              <FontAwesomeIcon icon={faUser} />
-            </div>
-          </div>
-
-          {/* Thông tin */}
-          <div style={{ marginBottom: "60px", fontSize: "21px", lineHeight: "2.6" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "18px", marginBottom: "28px" }}>
-              <FontAwesomeIcon icon={faEnvelope} style={{ color: "#d4a574", width: "26px" }} />
-              <span style={{ color: "#2d2d2d", fontWeight: 600 }}>Email:</span>
-              <span style={{ color: "#444", fontWeight: 500 }}>{user.email}</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "18px", marginBottom: "28px" }}>
-              <FontAwesomeIcon icon={faUser} style={{ color: "#d4a574", width: "26px" }} />
-              <span style={{ color: "#2d2d2d", fontWeight: 600 }}>Họ tên:</span>
-              <span style={{ color: "#444", fontWeight: 500 }}>{user.fullname || "Chưa cập nhật"}</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "18px" }}>
-              <FontAwesomeIcon icon={faPhone} style={{ color: "#d4a574", width: "26px" }} />
-              <span style={{ color: "#2d2d2d", fontWeight: 600 }}>Số điện thoại:</span>
-              <span style={{ color: "#444", fontWeight: 500 }}>{user.phoneNumber || "Chưa cập nhật"}</span>
-            </div>
-          </div>
-
-          {/* Nút hành động */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "22px", alignItems: "center" }}>
-            <button
-              onClick={() => navigate("/editProfile")}
-              style={{
-                width: "100%",
-                maxWidth: "460px",
-                padding: "20px 40px",
-                background: "#d4a574",
-                color: "white",
-                border: "none",
-                borderRadius: "50px",
-                fontSize: "19px",
-                fontWeight: 600,
-                cursor: "pointer",
-                boxShadow: "0 14px 40px rgba(212,165,116,0.5)",
-                transition: "all 0.4s",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "14px"
-              }}
-              onMouseOver={(e) => e.currentTarget.style.background = "#c49564"}
-              onMouseOut={(e) => e.currentTarget.style.background = "#d4a574"}
-            >
-              <FontAwesomeIcon icon={faEdit} />
-              Chỉnh sửa thông tin
-            </button>
-
-            <button
-              onClick={() => navigate("/")}
-              style={{
-                width: "100%",
-                maxWidth: "460px",
-                padding: "20px 40px",
-                background: "#2d2d2d",
-                color: "white",
-                border: "none",
-                borderRadius: "50px",
-                fontSize: "19px",
-                fontWeight: 600,
-                cursor: "pointer",
-                boxShadow: "0 14px 40px rgba(45,45,45,0.3)",
-                transition: "all 0.4s",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "14px"
-              }}
-              onMouseOver={(e) => e.currentTarget.style.background = "#111"}
-              onMouseOut={(e) => e.currentTarget.style.background = "#2d2d2d"}
-            >
-              <FontAwesomeIcon icon={faHome} />
-              Về Trang Chủ
-            </button>
-
-            <button
-              onClick={() => {
-                localStorage.clear()
-                document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"
-                navigate("/auth/login")
-              }}
-              style={{
-                width: "100%",
-                maxWidth: "460px",
-                padding: "20px 40px",
-                background: "#e74c3c",
-                color: "white",
-                border: "none",
-                borderRadius: "50px",
-                fontSize: "19px",
-                fontWeight: 600,
-                cursor: "pointer",
-                boxShadow: "0 14px 40px rgba(231,76,60,0.5)",
-                transition: "all 0.4s",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "14px"
-              }}
-              onMouseOver={(e) => e.currentTarget.style.background = "#c0392b"}
-              onMouseOut={(e) => e.currentTarget.style.background = "#e74c3c"}
-            >
-              <FontAwesomeIcon icon={faSignOutAlt} />
-              Đăng xuất
-            </button>
-          </div>
-
-          <div style={{ marginTop: "60px", color: "#888", fontSize: "16px", fontStyle: "italic" }}>
-            Shop Thời Trang – Nơi phong cách gặp gỡ sự tinh tế
-          </div>
+      {message.content && (
+        <div style={message.type === 'success' ? styles.alert : styles.error}>
+          {message.content}
         </div>
-      </div>
-    </div>
-  )
-}
+      )}
 
-export default ThongTinCaNhan
+      <img src={photoPreview} alt="Ảnh đại diện" style={styles.avatar} />
+
+      <form onSubmit={handleSubmit} encType="multipart/form-data">
+        <LabelInput icon="fas fa-envelope" name="email" type="email" value={formData.email} onChange={handleChange} />
+        <LabelInput icon="fas fa-user" name="fullname" type="text" value={formData.fullname} onChange={handleChange} />
+        <LabelInput icon="fas fa-phone" name="phone" type="text" value={formData.phone} onChange={handleChange} />
+
+        <label>Hình ảnh (tối đa 2MB):</label>
+        <div style={styles.inputGroup}>
+          <i className="fas fa-image" style={styles.icon}></i>
+          <input type="file" name="photo" accept="image/*" onChange={handleChange} style={styles.inputFile} />
+        </div>
+
+        <button type="submit" style={styles.button}><i className="fas fa-save"></i> Lưu thay đổi</button>
+      </form>
+
+      <a href="/thongtin" style={styles.backLink}><i className="fas fa-arrow-left"></i> Quay lại</a>
+    </div>
+  );
+};
+
+const LabelInput = ({ icon, name, type, value, onChange }) => (
+  <>
+    <label style={styles.label}>{name === 'fullname' ? 'Họ tên' : name === 'phone' ? 'Số điện thoại' : 'Email'}:</label>
+    <div style={styles.inputGroup}>
+      <i className={icon} style={styles.icon}></i>
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        required={name === 'email'}
+        style={styles.input}
+      />
+    </div>
+  </>
+);
+
+const styles = {
+  container: {
+    background: 'white',
+    padding: '20px',
+    width: '400px',
+    margin: '50px auto',
+    borderRadius: '10px',
+    boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
+    textAlign: 'center',
+  },
+  label: {
+    fontWeight: 'bold',
+    textAlign: 'left',
+    display: 'block',
+    marginTop: '15px',
+  },
+  inputGroup: {
+    display: 'flex',
+    alignItems: 'center',
+    border: '1px solid #ccc',
+    borderRadius: '5px',
+    marginBottom: '10px',
+    backgroundColor: 'white',
+  },
+  icon: {
+    padding: '10px',
+    color: '#666',
+  },
+  input: {
+    width: '100%',
+    padding: '10px',
+    border: 'none',
+    outline: 'none',
+    fontSize: '14px',
+  },
+  inputFile: {
+    flex: 1,
+    padding: '10px',
+    border: 'none',
+    outline: 'none',
+  },
+  button: {
+    backgroundColor: '#28a745',
+    color: 'white',
+    padding: '10px',
+    border: 'none',
+    width: '100%',
+    borderRadius: '5px',
+    fontSize: '16px',
+    marginTop: '10px',
+    cursor: 'pointer',
+  },
+  backLink: {
+    display: 'block',
+    marginTop: '15px',
+    textDecoration: 'none',
+    color: '#007bff',
+    fontSize: '14px',
+  },
+  avatar: {
+    width: '120px',
+    height: '120px',
+    borderRadius: '50%',
+    objectFit: 'cover',
+    border: '2px solid #ccc',
+    marginBottom: '10px',
+  },
+  alert: {
+    backgroundColor: '#28a745',
+    color: 'white',
+    padding: '10px',
+    borderRadius: '5px',
+    marginBottom: '10px',
+  },
+  error: {
+    backgroundColor: '#dc3545',
+    color: 'white',
+    padding: '10px',
+    borderRadius: '5px',
+    marginBottom: '10px',
+  },
+};
+
+export default EditProfile;

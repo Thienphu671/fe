@@ -1,3 +1,4 @@
+// src/pages/user/GioHang.jsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -15,6 +16,8 @@ const GioHang = () => {
   const [giohang, setGiohang] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState([]);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [hasConnectionError, setHasConnectionError] = useState(false); // Khóa nút + khi lỗi mạng
 
   useEffect(() => {
     fetchGiohang();
@@ -26,6 +29,7 @@ const GioHang = () => {
       const data = response.data || [];
       setGiohang(data);
       setSelectedIds([]);
+      setHasConnectionError(false); // Reset lỗi khi load thành công
     } catch (error) {
       console.error("Lỗi tải giỏ hàng:", error);
       alert("Không thể tải giỏ hàng! Vui lòng đăng nhập lại.");
@@ -48,18 +52,44 @@ const GioHang = () => {
     }
   };
 
+  // HÀM CẬP NHẬT SỐ LƯỢNG - BẮT LỖI HOÀN HẢO
   const handleCapNhatSoLuong = async (giohangId, newQuantity) => {
-    if (newQuantity < 1) return;
+    if (newQuantity < 1) {
+      setErrorMessage("Số lượng phải lớn hơn 0");
+      setTimeout(() => setErrorMessage(""), 4000);
+      return;
+    }
+
+    // Nếu có lỗi kết nối trước đó → không cho tăng thêm
+    if (hasConnectionError && newQuantity > giohang.find(i => i.id === giohangId)?.quantity) {
+      setErrorMessage("Đang có lỗi kết nối. Vui lòng tải lại trang để tiếp tục.");
+      setTimeout(() => setErrorMessage(""), 6000);
+      return;
+    }
+
     try {
-      await capNhatSoLuong(giohangId, newQuantity);
+      const response = await capNhatSoLuong(giohangId, newQuantity);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        setErrorMessage(errorText || "Không thể cập nhật số lượng");
+        setTimeout(() => setErrorMessage(""), 5000);
+        return;
+      }
+
+      // Thành công
       setGiohang((prev) =>
         prev.map((item) =>
           item.id === giohangId ? { ...item, quantity: newQuantity } : item
         )
       );
+      setHasConnectionError(false); // Reset lỗi mạng
+
     } catch (error) {
-      alert("Cập nhật thất bại!");
-      fetchGiohang();
+      console.error("Lỗi mạng:", error);
+      setErrorMessage("sản phẩm không đủ số lượng)");
+      setHasConnectionError(true); // Khóa nút tăng
+      setTimeout(() => setErrorMessage(""), 6000);
     }
   };
 
@@ -89,11 +119,10 @@ const GioHang = () => {
     });
   };
 
-  // FIX 100%: TÊN SẢN PHẨM KHÔNG ĐÈ LÊN HÌNH + ĐƠN GIÁ KHÔNG XUỐNG DÒNG
+  // CSS động
   useEffect(() => {
     const style = document.createElement("style");
     style.textContent = `
-      /* Reset & Layout */
       html, body, #root, .giohang-page { margin:0 !important; padding:0 !important; background:#f5f1ed !important; }
       .giohang-wrapper { max-width:100% !important; padding:0 20px !important; margin:0 auto !important; box-sizing:border-box; }
       .giohang-header { margin:30px 0 40px !important; text-align:center; }
@@ -122,51 +151,82 @@ const GioHang = () => {
         height:fit-content;
       }
 
-      /* Bảng cố định layout */
-      table { 
-        width:100%; 
-        border-collapse:collapse; 
-        table-layout:fixed; /* QUAN TRỌNG NHẤT */
-      }
+      table { width:100%; border-collapse:collapse; table-layout:fixed; }
+      table th:nth-child(1), table td:nth-child(1) { width:50px; }
+      table th:nth-child(2), table td:nth-child(2) { width:110px; }
+      table th:nth-child(3), table td:nth-child(3) { width:auto; }
+      table th:nth-child(4), table td:nth-child(4) { width:140px; }
+      table th:nth-child(5), table td:nth-child(5) { width:160px; }
+      table th:nth-child(6), table td:nth-child(6) { width:110px; }
 
-      /* Độ rộng từng cột */
-      table th:nth-child(1), table td:nth-child(1) { width:50px; }   /* Checkbox */
-      table th:nth-child(2), table td:nth-child(2) { width:110px; }  /* Hình */
-      table th:nth-child(3), table td:nth-child(3) { width:auto; }  /* Tên SP - chiếm phần còn lại */
-      table th:nth-child(4), table td:nth-child(4) { width:140px; }  /* Đơn giá */
-      table th:nth-child(5), table td:nth-child(5) { width:110px; }  /* Số lượng */
-      table th:nth-child(6), table td:nth-child(6) { width:110px; }  /* Xóa */
-
-      /* Tên sản phẩm: không tràn, xuống dòng nếu quá dài */
       .product-name-cell {
         padding: 20px 16px 20px 30px !important;
         text-align: left;
         word-wrap: break-word;
         overflow-wrap: break-word;
-        hyphens: auto;
       }
 
-      /* Đơn giá & Xóa: luôn thẳng hàng, không xuống dòng */
-      .price-text {
-        white-space: nowrap !important;
-        min-width: 110px;
-        text-align: center !important;
+      .price-text { white-space: nowrap !important; text-align: center !important; }
+
+      .quantity-controls {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        background: #f8f9fa;
+        border-radius: 14px;
+        padding: 8px 12px;
+        width: fit-content;
+        margin: 0 auto;
       }
 
-      /* Hover */
+      .quantity-btn {
+        width: 36px;
+        height: 36px;
+        border: none;
+        background: #d4a574;
+        color: white;
+        border-radius: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      .quantity-btn:disabled {
+        background: #ccc !important;
+        cursor: not-allowed !important;
+      }
+
+      .quantity-display {
+        min-width: 50px;
+        text-align: center;
+        font-weight: 600;
+        font-size: 18px;
+      }
+
       .delete-btn:hover { background:#e74c3c !important; color:white !important; }
       .checkout-btn:hover { background:#c49564 !important; transform:translateY(-4px); }
       tr:hover { background:#fdfaf7 !important; }
 
-      input[type=number] { -moz-appearance:textfield; }
-      input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; }
+      .error-toast {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #e74c3c;
+        color: white;
+        padding: 16px 40px;
+        border-radius: 50px;
+        font-weight: 600;
+        z-index: 9999;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        text-align: center;
+        max-width: 90%;
+      }
 
       @media (max-width: 992px) {
         .content-grid { grid-template-columns:1fr !important; }
         .summary-card { position:static !important; margin-top:40px; }
-      }
-      @media (max-width: 768px) {
-        .giohang-wrapper { padding:0 12px !important; }
       }
     `;
     document.head.appendChild(style);
@@ -186,7 +246,6 @@ const GioHang = () => {
     img: { width: "90px", height: "90px", objectFit: "cover", borderRadius: "14px", boxShadow: "0 4px 15px rgba(0,0,0,0.1)" },
     productName: { fontFamily: "'Georgia', serif", fontSize: "20px", color: "#2d2d2d", fontWeight: 400 },
     price: { fontSize: "19px", color: "#d4a574", fontWeight: 600 },
-    quantityInput: { width: "80px", height: "48px", textAlign: "center", border: "2px solid #ddd", borderRadius: "12px", fontSize: "16px", fontWeight: 600 },
     deleteBtn: { padding: "10px 18px", background: "transparent", border: "2px solid #e74c3c", color: "#e74c3c", borderRadius: "12px", fontWeight: 600, fontSize: "14px" },
 
     totalLabel: { fontSize: "26px", fontWeight: 600, color: "#2d2d2d", margin: "0" },
@@ -233,7 +292,6 @@ const GioHang = () => {
         </div>
 
         <div className="content-grid">
-          {/* Danh sách sản phẩm */}
           <div className="table-wrapper">
             <div style={{background:"#fff", borderRadius:"24px", overflow:"hidden", boxShadow:"0 15px 50px rgba(0,0,0,0.1)"}}>
               <table>
@@ -262,30 +320,41 @@ const GioHang = () => {
                           />
                         </td>
 
-                        {/* TÊN SẢN PHẨM - ĐÃ FIX KHÔNG ĐÈ LÊN HÌNH */}
                         <td className="product-name-cell">
                           <div style={styles.productName}>{item.tenSanPham}</div>
                         </td>
 
-                        {/* ĐƠN GIÁ */}
                         <td style={styles.td}>
                           <div className="price-text" style={styles.price}>
                             {Number(item.giaSanPham).toLocaleString("vi-VN")} đ
                           </div>
                         </td>
 
-                        {/* SỐ LƯỢNG */}
+                        {/* NÚT + / – VỚI KHÓA KHI LỖI MẠNG */}
                         <td style={styles.td}>
-                          <input
-                            type="number"
-                            min="1"
-                            style={styles.quantityInput}
-                            value={item.quantity || 1}
-                            onChange={(e) => handleCapNhatSoLuong(item.id, parseInt(e.target.value) || 1)}
-                          />
+                          <div className="quantity-controls">
+                            <button
+                              className="quantity-btn"
+                              onClick={() => handleCapNhatSoLuong(item.id, item.quantity - 1)}
+                              disabled={item.quantity <= 1}
+                            >
+                              −
+                            </button>
+                            <span className="quantity-display">{item.quantity}</span>
+                            <button
+                              className="quantity-btn"
+                              onClick={() => handleCapNhatSoLuong(item.id, item.quantity + 1)}
+                              disabled={hasConnectionError}
+                              style={{
+                                background: hasConnectionError ? "#ccc" : "#d4a574",
+                                cursor: hasConnectionError ? "not-allowed" : "pointer"
+                              }}
+                            >
+                              +
+                            </button>
+                          </div>
                         </td>
 
-                        {/* XÓA */}
                         <td style={styles.td}>
                           <button style={styles.deleteBtn} className="delete-btn" onClick={() => handleXoa(item.sanphamId, item.id)}>
                             Xóa
@@ -299,7 +368,6 @@ const GioHang = () => {
             </div>
           </div>
 
-          {/* Tổng tiền */}
           <div className="summary-card">
             <h3 style={styles.totalLabel}>
               Tổng thanh toán ({selectedIds.length} sản phẩm):
@@ -318,6 +386,13 @@ const GioHang = () => {
           </div>
         </div>
       </div>
+
+      {/* TOAST THÔNG BÁO LỖI */}
+      {errorMessage && (
+        <div className="error-toast">
+          {errorMessage}
+        </div>
+      )}
     </div>
   );
 };

@@ -3,12 +3,13 @@
 
 import React, { useState, useEffect } from 'react'
 import axios from 'axios'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom' // Thêm useSearchParams
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faStar } from '@fortawesome/free-solid-svg-icons'
 
 const OrderDetail = () => {
   const { id } = useParams()
+  const [searchParams] = useSearchParams() // Lấy query params
   const navigate = useNavigate()
   const [orderDetails, setOrderDetails] = useState([])
   const [totalPrice, setTotalPrice] = useState(0)
@@ -22,17 +23,30 @@ const OrderDetail = () => {
   const userId = localStorage.getItem("userId")
 
   useEffect(() => {
+    // Lấy ngày từ URL trước (do OrderList truyền qua)
+    const dateFromUrl = searchParams.get("date")
+    if (dateFromUrl) {
+      setOrderDate(decodeURIComponent(dateFromUrl))
+    }
+
     axios.get(`http://localhost:8080/api/donHangND/detail/${id}`)
       .then(res => {
         const data = res.data
+        console.log("Dữ liệu chi tiết đơn hàng:", data)
+
         const details = data.orderDetails?.orderDetails || []
 
         setOrderDetails(details)
-        setTotalPrice(data.orderDetails?.totalPrice || 0)
-        setOrderDate(data.orderDetails?.orderDate)
+        setTotalPrice(data.orderDetails?.totalPrice || data.totalPrice || 0)
+
+        // Nếu không có ngày từ URL, thử lấy từ API (fallback)
+        if (!dateFromUrl) {
+          setOrderDate(data.date || data.orderDetails?.orderDate || null)
+        }
+
         setUser(data.user)
-        setStatus(data.status) // <-- Đây là trạng thái bạn nhận từ backend
-        setAddress(data.address)
+        setStatus(data.status || "Chưa xác định")
+        setAddress(data.address || "Chưa có")
 
         const initialReviews = details.map(item => ({
           productId: item.productId,
@@ -46,7 +60,7 @@ const OrderDetail = () => {
         console.error("Lỗi tải chi tiết đơn:", err)
         setMessage("Không thể tải chi tiết đơn hàng")
       })
-  }, [id])
+  }, [id, searchParams])
 
   const handleRating = (index, rating) => {
     const updated = [...productReviews]
@@ -64,6 +78,7 @@ const OrderDetail = () => {
     const review = productReviews[index]
     if (!review.productId || review.rating === 0 || !review.review.trim()) {
       setMessage("Vui lòng chọn sao và nhập đánh giá")
+      setTimeout(() => setMessage(''), 3000)
       return
     }
 
@@ -89,7 +104,6 @@ const OrderDetail = () => {
       })
   }
 
-  // Hover giống các trang khác
   useEffect(() => {
     const style = document.createElement("style")
     style.textContent = `
@@ -101,17 +115,21 @@ const OrderDetail = () => {
     return () => document.head.removeChild(style)
   }, [])
 
-  const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString("vi-VN", {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
+  const formatDateTime = (dateString) => {
+    if (!dateString) return "Chưa có thông tin"
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) return "Chưa có thông tin"
+    return date.toLocaleString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
     })
   }
 
-  // CHỈ CHO PHÉP ĐÁNH GIÁ KHI ĐƠN HÀNG "ĐÃ THANH TOÁN"
-  const isPaid = status === "Đã thanh toán"
+  const isPaid = status === "Đã thanh toán" || status === "Đã xác nhận"
 
   if (!user || orderDetails.length === 0) {
     return <div style={{ textAlign:"center", padding:"150px 0", fontSize:"28px", color:"#888" }}>Đang tải...</div>
@@ -119,7 +137,6 @@ const OrderDetail = () => {
 
   return (
     <div style={{ background:"#f5f1ed", minHeight:"100vh", paddingBottom:"120px" }}>
-      {/* Header */}
       <div style={{ padding:"10px 40px 60px", textAlign:"center" }}>
         <h1 style={{ fontFamily:"'Georgia', serif", fontSize:"52px", fontWeight:300, color:"#2d2d2d", margin:"0 0 20px 0" }}>
           Chi Tiết Đơn Hàng #{id}
@@ -128,7 +145,6 @@ const OrderDetail = () => {
       </div>
 
       <div style={{ maxWidth:"1400px", margin:"0 auto", padding:"0 40px" }}>
-        {/* Thông tin đơn hàng */}
         <div style={{
           background:"#fff",
           borderRadius:"20px",
@@ -141,13 +157,13 @@ const OrderDetail = () => {
             <div><strong>Email:</strong> {user.email}</div>
             <div><strong>SĐT:</strong> {user.phoneNumber}</div>
             <div><strong>Địa chỉ:</strong> {address}</div>
-            <div><strong>Ngày đặt:</strong> {formatDate(orderDate)}</div>
+            <div><strong>Ngày đặt:</strong> {formatDateTime(orderDate)}</div>
             <div>
               <strong>Trạng thái:</strong>{" "}
               <span style={{
                 padding:"8px 20px",
                 borderRadius:"50px",
-                backgroundColor: status === "Đã thanh toán" ? "#27ae60" : status === "Đã hủy" ? "#e74c3c" : "#f39c12",
+                backgroundColor: isPaid ? "#27ae60" : status === "Đã hủy" ? "#e74c3c" : "#f39c12",
                 color:"white",
                 fontWeight:600,
                 fontSize:"15px",
@@ -159,7 +175,6 @@ const OrderDetail = () => {
           </div>
         </div>
 
-        {/* Danh sách sản phẩm */}
         <div style={{ display:"grid", gap:"32px" }}>
           {orderDetails.map((item, idx) => {
             const review = productReviews[idx] || {}
@@ -177,7 +192,7 @@ const OrderDetail = () => {
                 alignItems:"center"
               }}>
                 <img
-                  src={`http://localhost:8080/uploads/${item.productImage || item.hinhAnh}`}
+src={`http://localhost:8080/uploads/${item.productImage || item.hinhAnh}`}  
                   alt={item.productName || item.tenSanPham}
                   style={{
                     width:"180px",
@@ -203,60 +218,56 @@ const OrderDetail = () => {
                     Thành tiền: {(Number(item.price || item.gia) * Number(item.quantity || item.soLuong)).toLocaleString("vi-VN")} đ
                   </p>
 
-                  {/* CHỈ HIỆN ĐÁNH GIÁ KHI ĐÃ THANH TOÁN */}
-                  {isPaid && (
+                  {isPaid && !review.submitted && (
                     <div style={{ marginTop:"24px" }}>
-                      {review.submitted ? (
-                        <div style={{ color:"#27ae60", fontWeight:600, fontSize:"17px" }}>
-                          Đã đánh giá sản phẩm này
-                        </div>
-                      ) : (
-                        <div>
-                          <p style={{ margin:"0 0 12px 0", fontWeight:600, color:"#2d2d2d" }}>
-                            Đánh giá sản phẩm:
-                          </p>
-                          <div style={{ marginBottom:"12px" }}>
-                            {[1,2,3,4,5].map(star => (
-                              <FontAwesomeIcon
-                                key={star}
-                                icon={faStar}
-                                style={{ fontSize:"26px", cursor:"pointer", marginRight:"8px" }}
-                                color={star <= review.rating ? "#ffd700" : "#e0e0e0"}
-                                onClick={() => handleRating(idx, star)}
-                              />
-                            ))}
-                          </div>
-                          <textarea
-                            rows={3}
-                            placeholder="Viết đánh giá của bạn..."
-                            value={review.review || ""}
-                            onChange={e => handleReview(idx, e.target.value)}
-                            style={{
-                              width:"100%",
-                              padding:"14px",
-                              borderRadius:"12px",
-                              border:"2px solid #eee",
-                              fontSize:"16px",
-                              marginBottom:"14px"
-                            }}
+                      <p style={{ margin:"0 0 12px 0", fontWeight:600, color:"#2d2d2d" }}>
+                        Đánh giá sản phẩm:
+                      </p>
+                      <div style={{ marginBottom:"12px" }}>
+                        {[1,2,3,4,5].map(star => (
+                          <FontAwesomeIcon
+                            key={star}
+                            icon={faStar}
+                            style={{ fontSize:"26px", cursor:"pointer", marginRight:"8px" }}
+                            color={star <= review.rating ? "#ffd700" : "#e0e0e0"}
+                            onClick={() => handleRating(idx, star)}
                           />
-                          <button
-                            onClick={() => submitReview(idx)}
-                            style={{
-                              padding:"12px 36px",
-                              background:"#d4a574",
-                              color:"white",
-                              border:"none",
-                              borderRadius:"50px",
-                              fontWeight:600,
-                              cursor:"pointer",
-                              fontSize:"14px"
-                            }}
-                          >
-                            Gửi đánh giá
-                          </button>
-                        </div>
-                      )}
+                        ))}
+                      </div>
+                      <textarea
+                        rows={3}
+                        placeholder="Viết đánh giá của bạn..."
+                        value={review.review || ""}
+                        onChange={e => handleReview(idx, e.target.value)}
+                        style={{
+                          width:"100%",
+                          padding:"14px",
+                          borderRadius:"12px",
+                          border:"2px solid #eee",
+                          fontSize:"16px",
+                          marginBottom:"14px"
+                        }}
+                      />
+                      <button
+                        onClick={() => submitReview(idx)}
+                        style={{
+                          padding:"12px 36px",
+                          background:"#d4a574",
+                          color:"white",
+                          border:"none",
+                          borderRadius:"50px",
+                          fontWeight:600,
+                          cursor:"pointer",
+                          fontSize:"14px"
+                        }}
+                      >
+                        Gửi đánh giá
+                      </button>
+                    </div>
+                  )}
+                  {isPaid && review.submitted && (
+                    <div style={{ marginTop:"24px", color:"#27ae60", fontWeight:600, fontSize:"17px" }}>
+                      Đã đánh giá sản phẩm này
                     </div>
                   )}
                 </div>
@@ -265,7 +276,6 @@ const OrderDetail = () => {
           })}
         </div>
 
-        {/* Tổng tiền */}
         <div style={{
           textAlign:"right",
           fontSize:"32px",
@@ -276,7 +286,6 @@ const OrderDetail = () => {
           Tổng cộng: {Number(totalPrice).toLocaleString("vi-VN")} đ
         </div>
 
-        {/* Nút quay lại */}
         <div style={{ textAlign:"center", marginBottom:"60px" }}>
           <button
             onClick={() => navigate(-1)}
@@ -298,7 +307,6 @@ const OrderDetail = () => {
           </button>
         </div>
 
-        {/* Thông báo */}
         {message && (
           <div style={{
             position:"fixed",

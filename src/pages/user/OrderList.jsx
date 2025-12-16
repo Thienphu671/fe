@@ -10,6 +10,9 @@ export default function OrderList() {
   const [filteredOrders, setFilteredOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeFilter, setActiveFilter] = useState("all")
+  const [currentPage, setCurrentPage] = useState(1)
+  const ordersPerPage = 5 // Số đơn hàng mỗi trang
+
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -27,7 +30,11 @@ export default function OrderList() {
         withCredentials: true,
       })
       .then((res) => {
-        const data = res.data || []
+        let data = res.data || []
+
+        // Sắp xếp theo ID giảm dần (mới nhất trước)
+        data = data.sort((a, b) => b.id - a.id)
+
         setOrders(data)
         setFilteredOrders(data)
         setLoading(false)
@@ -38,20 +45,23 @@ export default function OrderList() {
       })
   }, [])
 
-  // Lọc đơn hàng
   useEffect(() => {
-    if (activeFilter === "all") {
-      setFilteredOrders(orders)
-    } else {
-      setFilteredOrders(
-        orders.filter((order) => {
-          if (activeFilter === "pending") return order.status === 0
-          if (activeFilter === "confirmed") return order.status === 1
-          if (activeFilter === "cancelled") return order.status === 2
-          return true
-        })
-      )
+    let filtered = orders
+
+    if (activeFilter !== "all") {
+      filtered = orders.filter((order) => {
+        if (activeFilter === "pending") return order.status === 0
+        if (activeFilter === "confirmed") return order.status === 1
+        if (activeFilter === "cancelled") return order.status === 2
+        return true
+      })
     }
+
+    // Giữ nguyên thứ tự ID giảm dần sau khi lọc
+    filtered = filtered.sort((a, b) => b.id - a.id)
+
+    setFilteredOrders(filtered)
+    setCurrentPage(1) // Reset về trang 1 khi thay đổi filter
   }, [activeFilter, orders])
 
   const cancelOrder = (id) => {
@@ -79,7 +89,9 @@ export default function OrderList() {
   }
 
   const formatDateTime = (dateString) => {
+    if (!dateString) return "Chưa có thông tin"
     const date = new Date(dateString)
+    if (isNaN(date.getTime())) return "Chưa có thông tin"
     return date.toLocaleString("vi-VN", {
       hour: "2-digit",
       minute: "2-digit",
@@ -90,12 +102,13 @@ export default function OrderList() {
     })
   }
 
-  // Hover giống trang sản phẩm
+  // Hover effect
   useEffect(() => {
     const style = document.createElement("style")
     style.textContent = `
       html, body, #root { margin:0; padding:0; width:100%; background:#f5f1ed; overflow-x:hidden; }
       .order-card:hover { transform: translateY(-16px); box-shadow: 0 25px 50px rgba(0,0,0,0.15); }
+      .pagination-btn:hover:not(:disabled) { background:#c49a6c; transform:scale(1.05); }
     `
     document.head.appendChild(style)
     return () => document.head.removeChild(style)
@@ -103,19 +116,10 @@ export default function OrderList() {
 
   const styles = {
     root: { margin: 0, padding: 0, background: "#f5f1ed", minHeight: "100vh" },
-
     header: { padding: "10px 20px 60px", textAlign: "center" },
     title: { fontFamily: "'Georgia', serif", fontSize: "52px", fontWeight: 300, color: "#2d2d2d", margin: "0 0 20px 0" },
     underline: { height: "5px", width: "90px", backgroundColor: "#d4a574", margin: "0 auto 40px" },
-
-    filterBar: {
-      display: "flex",
-      justifyContent: "center",
-      gap: "18px",
-      margin: "0 auto 60px",
-      flexWrap: "wrap",
-      maxWidth: "1000px",
-    },
+    filterBar: { display: "flex", justifyContent: "center", gap: "18px", margin: "0 auto 60px", flexWrap: "wrap", maxWidth: "1000px" },
     filterBtn: (isActive) => ({
       padding: "11px 28px",
       background: isActive ? "#2d2d2d" : "transparent",
@@ -128,87 +132,45 @@ export default function OrderList() {
       transition: "all 0.3s",
       minWidth: "150px",
     }),
-
-    container: {
-      maxWidth: "1400px",
-      margin: "0 auto",
-      padding: "0 40px 120px",
-      display: "flex",
-      flexDirection: "column",
-      gap: "40px",
-    },
-
-    card: {
-      background: "#fff",
-      borderRadius: "20px",
-      overflow: "hidden",
-      boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
-      transition: "all 0.4s ease",
-    },
-
-    cardHeader: {
-      padding: "32px 40px",
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-    },
-
+    container: { maxWidth: "1400px", margin: "0 auto", padding: "0 40px 120px", display: "flex", flexDirection: "column", gap: "40px" },
+    card: { background: "#fff", borderRadius: "20px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.08)", transition: "all 0.4s ease" },
+    cardHeader: { padding: "32px 40px", display: "flex", justifyContent: "space-between", alignItems: "center" },
     headerLeft: { display: "flex", flexDirection: "column", gap: "8px" },
-    orderId: { fontSize: "24px", fontWeight: 600, color: "#2d2d" },
+    orderId: { fontSize: "24px", fontWeight: 600, color: "#2d2d2d" },
     orderTime: { fontSize: "16px", color: "#7f8c8d" },
-
-    statusBadge: (color) => ({
-      padding: "10px 24px",
-      borderRadius: "50px",
-      fontWeight: 600,
-      fontSize: "15px",
-      color: "white",
-      backgroundColor: color,
-    }),
-
-    cardBody: {
-      padding: "0 40px 32px",
-    },
-
-    totalPrice: {
-      textAlign: "right",
-      fontSize: "28px",
-      fontWeight: 600,
-      color: "#d4a574",
-      margin: "20px 0 30px",
-    },
-
-    actions: {
-      display: "flex",
-      justifyContent: "flex-end",
-      gap: "16px",
-    },
-
-    btnView: {
-      padding: "14px 32px",
-      background: "#2d2d2d",
-      color: "#fff",
-      border: "none",
-      borderRadius: "8px",
-      fontWeight: 600,
-      cursor: "pointer",
-      fontSize: "15px",
-    },
-
-    btnCancel: {
-      padding: "14px 32px",
-      background: "transparent",
-      color: "#e74c3c",
-      border: "2px solid #e74c3c",
-      borderRadius: "8px",
-      fontWeight: 600,
-      cursor: "pointer",
-      fontSize: "15px",
-    },
-
+    statusBadge: (color) => ({ padding: "10px 24px", borderRadius: "50px", fontWeight: 600, fontSize: "15px", color: "white", backgroundColor: color }),
+    cardBody: { padding: "0 40px 32px" },
+    actions: { display: "flex", justifyContent: "flex-end", gap: "16px" },
+    btnView: { padding: "14px 32px", background: "#2d2d2d", color: "#fff", border: "none", borderRadius: "8px", fontWeight: 600, cursor: "pointer", fontSize: "15px" },
+    btnCancel: { padding: "14px 32px", background: "transparent", color: "#e74c3c", border: "2px solid #e74c3c", borderRadius: "8px", fontWeight: 600, cursor: "pointer", fontSize: "15px" },
     empty: { textAlign: "center", padding: "140px 20px", color: "#888", fontSize: "28px" },
     loading: { textAlign: "center", padding: "180px 0", fontSize: "28px", color: "#888" },
+
+    // Phân trang
+    pagination: { display: "flex", justifyContent: "center", alignItems: "center", gap: "12px", marginTop: "40px" },
+    paginationBtn: { 
+      padding: "12px 20px", 
+      background: "#d4a574", 
+      color: "#fff", 
+      border: "none", 
+      borderRadius: "50px", 
+      fontWeight: 600, 
+      fontSize: "15px", 
+      cursor: "pointer",
+      minWidth: "50px",
+      transition: "all 0.3s"
+    },
+    paginationActive: { background: "#2d2d2d" },
+    paginationDisabled: { background: "#ccc", cursor: "not-allowed" },
   }
+
+  // TÍNH TOÁN PHÂN TRANG
+  const indexOfLastOrder = currentPage * ordersPerPage
+  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage
+  const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder)
+  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage)
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber)
 
   if (loading) return <div style={styles.loading}>Đang tải đơn hàng...</div>
 
@@ -248,22 +210,22 @@ export default function OrderList() {
 
         <div style={styles.filterBar}>
           <button style={styles.filterBtn(activeFilter === "all")} onClick={() => setActiveFilter("all")}>
-            Tất cả đơn hàng
+            Tất cả đơn hàng ({orders.length})
           </button>
           <button style={styles.filterBtn(activeFilter === "pending")} onClick={() => setActiveFilter("pending")}>
-            Chờ xác nhận
+            Chờ xác nhận ({orders.filter(o => o.status === 0).length})
           </button>
           <button style={styles.filterBtn(activeFilter === "confirmed")} onClick={() => setActiveFilter("confirmed")}>
-            Đã xác nhận
+            Đã xác nhận ({orders.filter(o => o.status === 1).length})
           </button>
           <button style={styles.filterBtn(activeFilter === "cancelled")} onClick={() => setActiveFilter("cancelled")}>
-            Đã hủy
+            Đã hủy ({orders.filter(o => o.status === 2).length})
           </button>
         </div>
       </div>
 
       <div style={styles.container}>
-        {filteredOrders.map((order) => {
+        {currentOrders.map((order) => {
           const status = getStatusInfo(order.status)
 
           return (
@@ -278,12 +240,13 @@ export default function OrderList() {
               </div>
 
               <div style={styles.cardBody}>
-               
-
                 <div style={styles.actions}>
                   <button
                     style={styles.btnView}
-                    onClick={() => navigate(`/donHangND/detail/${order.id}`)}
+                    onClick={() => {
+                      const dateStr = order.date || order.ngayDatHang || ''
+                      navigate(`/donHangND/detail/${order.id}?date=${encodeURIComponent(dateStr)}`)
+                    }}
                   >
                     Xem chi tiết
                   </button>
@@ -299,6 +262,46 @@ export default function OrderList() {
           )
         })}
       </div>
+
+      {/* PHÂN TRANG */}
+      {totalPages > 1 && (
+        <div style={styles.pagination}>
+          <button
+            style={{
+              ...styles.paginationBtn,
+              ...(currentPage === 1 ? styles.paginationDisabled : {})
+            }}
+            onClick={() => paginate(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            Trước
+          </button>
+
+          {[...Array(totalPages)].map((_, i) => (
+            <button
+              key={i + 1}
+              style={{
+                ...styles.paginationBtn,
+                ...(currentPage === i + 1 ? styles.paginationActive : {})
+              }}
+              onClick={() => paginate(i + 1)}
+            >
+              {i + 1}
+            </button>
+          ))}
+
+          <button
+            style={{
+              ...styles.paginationBtn,
+              ...(currentPage === totalPages ? styles.paginationDisabled : {})
+            }}
+            onClick={() => paginate(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            Sau
+          </button>
+        </div>
+      )}
     </div>
   )
 }

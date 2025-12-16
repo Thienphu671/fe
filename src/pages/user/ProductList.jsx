@@ -8,7 +8,7 @@ import { toast } from "react-toastify"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faHeart, faSearch } from "@fortawesome/free-solid-svg-icons"
 
-const ITEMS_PER_PAGE = 9
+const ITEMS_PER_PAGE = 12
 
 const SanPham = () => {
   const [allProducts, setAllProducts] = useState([]) // dữ liệu gốc
